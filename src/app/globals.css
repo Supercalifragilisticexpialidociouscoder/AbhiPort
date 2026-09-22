@@ -1,0 +1,715 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────────────────
+   ABHI / 2026 — design tokens
+
+   Surfaces:  ink (default) · paper · garage (telemetry) · ir (signal)
+   One accent: IR — infrared vermilion.
+   The page theme lives on <html data-theme>. Sections declare the theme
+   they want; ScrollDirector moves <html> between them as you scroll and
+   the registered colour properties below interpolate — the whole page
+   shifts, not just a section background.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@property --bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #0b0b0a;
+}
+@property --fg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ecebe6;
+}
+@property --muted {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #8f8d86;
+}
+@property --line {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(236 235 230 / 0.14);
+}
+@property --accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ff4521;
+}
+
+@theme {
+  --color-ink: #0b0b0a;
+  --color-paper: #ecebe6;
+  --color-ir: #ff4521;
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-snap: cubic-bezier(0.76, 0, 0.24, 1);
+  --breakpoint-3xl: 112rem;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --font-display: var(--font-archivo), "Arial Narrow", "Helvetica Neue", sans-serif;
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+  --spacing-gutter: var(--gutter);
+  --spacing-nav: var(--nav-h);
+}
+
+/* `track:` — styles that only apply while a section is running as a pinned
+   horizontal track (desktop, JS, motion OK). Otherwise things just stack. */
+@custom-variant track {
+  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    html.js & {
+      @slot;
+    }
+  }
+}
+
+@custom-variant land {
+  @media (min-width: 768px) and (min-aspect-ratio: 1/1) {
+    @slot;
+  }
+}
+
+/* ── Surfaces ──────────────────────────────────────────────────────────── */
+
+:root,
+[data-theme="ink"],
+[data-surface="ink"] {
+  --bg: #0b0b0a;
+  --fg: #ecebe6;
+  --muted: #8f8d86;
+  --line: rgb(236 235 230 / 0.14);
+  --accent: #ff4521;
+}
+
+[data-theme="paper"],
+[data-surface="paper"] {
+  --bg: #ecebe6;
+  --fg: #0b0b0a;
+  --muted: #5c5a54;
+  --line: rgb(11 11 10 / 0.16);
+  --accent: #e2380f;
+}
+
+[data-theme="garage"],
+[data-surface="garage"] {
+  --bg: #0b0d0e;
+  --fg: #e3e6e4;
+  --muted: #7f8985;
+  --line: rgb(227 230 228 / 0.12);
+  --accent: #ff4521;
+}
+
+[data-theme="ir"],
+[data-surface="ir"] {
+  --bg: #ff4521;
+  --fg: #0b0b0a;
+  --muted: #4a1204;
+  --line: rgb(11 11 10 / 0.24);
+  --accent: #0b0b0a;
+}
+
+[data-theme],
+[data-surface] {
+  background-color: var(--bg);
+  color: var(--fg);
+}
+
+/* With JS, sections hand their colours to <html> instead of painting their
+   own — so the page transitions as one surface. */
+html.theme-sync body [data-theme] {
+  --bg: inherit;
+  --fg: inherit;
+  --muted: inherit;
+  --line: inherit;
+  --accent: inherit;
+  background-color: transparent;
+}
+
+html {
+  --gutter: clamp(16px, 2.4vw, 44px);
+  --nav-h: 64px;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scrollbar-color: var(--muted) var(--bg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-sync {
+    transition:
+      --bg 0.7s var(--ease-expo),
+      --fg 0.7s var(--ease-expo),
+      --muted 0.7s var(--ease-expo),
+      --line 0.7s var(--ease-expo),
+      --accent 0.7s var(--ease-expo);
+  }
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+img,
+video {
+  max-width: 100%;
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+.lenis [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/* ── Utilities ─────────────────────────────────────────────────────────── */
+
+@utility display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variation-settings: "wdth" var(--wdth, 62);
+  text-transform: uppercase;
+  line-height: 0.82;
+  letter-spacing: -0.005em;
+  font-kerning: normal;
+}
+
+@utility display-wide {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: "wdth" var(--wdth, 125);
+  text-transform: uppercase;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+}
+
+@utility label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 450;
+}
+
+@utility hollow {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--fg);
+}
+
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Components ────────────────────────────────────────────────────────── */
+
+@layer components {
+  .skip-link {
+    position: fixed;
+    left: 12px;
+    top: 12px;
+    z-index: 200;
+    padding: 10px 14px;
+    background: var(--fg);
+    color: var(--bg);
+    font: 500 12px/1 var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transform: translateY(-200%);
+  }
+  .skip-link:focus-visible {
+    transform: none;
+  }
+
+  /* Text masks for reveals. A little padding stops the clip from shaving
+     the tops of tall capitals. */
+  .mask {
+    display: block;
+    overflow: hidden;
+    padding-block: 0.08em 0.04em;
+    margin-block: -0.08em -0.04em;
+  }
+  .mask-inline {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+    padding-block: 0.08em 0.04em;
+    margin-block: -0.08em -0.04em;
+  }
+
+  /* [ADD …] placeholders — deliberately loud so nothing unverified hides. */
+  .ph {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font: 500 11px/1 var(--font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px dashed color-mix(in oklab, var(--accent) 70%, transparent);
+    padding: 0.45em 0.6em;
+    max-width: 100%;
+    line-height: 1.35;
+    vertical-align: middle;
+    font-variation-settings: normal;
+  }
+
+  /* Image slot placeholder — reads as a deliberate empty frame, not a bug. */
+  .slot {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background:
+      linear-gradient(135deg, transparent 49.85%, var(--line) 50%, transparent 50.15%),
+      linear-gradient(45deg, transparent 49.85%, var(--line) 50%, transparent 50.15%),
+      color-mix(in oklab, var(--fg) 4%, var(--bg));
+  }
+
+  .tick {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-color: var(--fg);
+    opacity: 0.7;
+  }
+
+  /* Links with a line that draws in on hover. */
+  .link-line {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-position: 100% 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.5s var(--ease-expo);
+  }
+  .link-line:hover,
+  .link-line:focus-visible {
+    background-size: 100% 1px;
+    background-position: 0% 100%;
+  }
+
+  .arrow-nudge {
+    display: inline-block;
+    transition: transform 0.5s var(--ease-expo);
+  }
+  .group:hover .arrow-nudge,
+  .group:focus-visible .arrow-nudge {
+    transform: translate(4px, -4px);
+  }
+  .arrow-nudge-x {
+    display: inline-block;
+    transition: transform 0.5s var(--ease-expo);
+  }
+  .group:hover .arrow-nudge-x,
+  .group:focus-visible .arrow-nudge-x {
+    transform: translateX(6px);
+  }
+}
+
+/* ── Scroll reveals ───────────────────────────────────────────────────────
+   Hidden only when JS is running and motion is welcome. Opacity (not
+   visibility) keeps everything focusable; focus reveals instantly. */
+@media (prefers-reduced-motion: no-preference) {
+  html.js [data-reveal]:not([data-reveal="children"]),
+  html.js [data-reveal="children"] > * {
+    opacity: 0;
+  }
+  html.js [data-reveal]:focus-within,
+  html.js [data-reveal="children"] > *:focus-within {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ── Global overlays ───────────────────────────────────────────────────── */
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+html[data-theme="paper"] .grain {
+  opacity: 0.12;
+}
+
+/* Telemetry grid — fades in when the page enters the garage. */
+.garage-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background-image:
+    linear-gradient(to right, rgb(227 230 228 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(227 230 228 / 0.05) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-position: calc(var(--gutter) - 1px) 0;
+  mask-image: radial-gradient(120% 90% at 50% 50%, #000 40%, transparent 100%);
+  transition: opacity 0.9s var(--ease-expo);
+}
+html[data-theme="garage"] .garage-grid {
+  opacity: 1;
+}
+
+main {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Nav ───────────────────────────────────────────────────────────────── */
+
+.nav-blend {
+  mix-blend-mode: difference;
+  --fg: #ecebe6;
+  --muted: rgb(236 235 230 / 0.6);
+  --line: rgb(236 235 230 / 0.28);
+  --accent: #ecebe6;
+  color: var(--fg);
+}
+/* Difference on signal red turns teal — go plain ink there instead. */
+html[data-theme="ir"] .nav-blend {
+  mix-blend-mode: normal;
+  --fg: #0b0b0a;
+  --muted: rgb(11 11 10 / 0.7);
+  --line: rgb(11 11 10 / 0.3);
+  --accent: #0b0b0a;
+}
+
+html:not([data-theme="garage"]) .hud-only {
+  display: none;
+}
+
+/* ── Custom cursor ─────────────────────────────────────────────────────── */
+
+html.has-cursor,
+html.has-cursor * {
+  cursor: none !important;
+}
+
+.cursor-dot {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 120;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 999px;
+  background: #ecebe6;
+  mix-blend-mode: difference;
+  pointer-events: none;
+  transition:
+    width 0.35s var(--ease-expo),
+    height 0.35s var(--ease-expo),
+    margin 0.35s var(--ease-expo),
+    opacity 0.3s;
+}
+.cursor-dot[data-state="link"] {
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+}
+.cursor-dot[data-state="label"] {
+  width: 0;
+  height: 0;
+  margin: 0;
+}
+.cursor-dot[data-state="hidden"] {
+  opacity: 0;
+}
+html[data-theme="ir"] .cursor-dot {
+  mix-blend-mode: normal;
+  background: #0b0b0a;
+}
+
+/* Outer element is positioned by GSAP; the inner one owns the scale so the
+   two transforms never fight. */
+.cursor-label {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 121;
+  pointer-events: none;
+  width: 84px;
+  height: 84px;
+  margin: -42px 0 0 -42px;
+}
+.cursor-label > span {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: #ff4521;
+  color: #0b0b0a;
+  font: 600 11px/1 var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transform: scale(0);
+  transition: transform 0.45s var(--ease-expo);
+}
+.cursor-label[data-on="true"] > span {
+  transform: scale(1);
+}
+html[data-theme="ir"] .cursor-label > span {
+  background: #0b0b0a;
+  color: #ff4521;
+}
+
+.cursor-cross {
+  position: fixed;
+  pointer-events: none;
+  z-index: 119;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.cursor-cross[data-axis="x"] {
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 1px;
+}
+.cursor-cross[data-axis="y"] {
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 100vh;
+}
+.cursor-coords {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 121;
+  pointer-events: none;
+  color: var(--accent);
+  font: 500 10px/1.4 var(--font-mono);
+  letter-spacing: 0.08em;
+  white-space: pre;
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+html[data-theme="garage"] .cursor-cross {
+  opacity: 0.22;
+}
+html[data-theme="garage"] .cursor-coords {
+  opacity: 1;
+}
+
+/* ── Hero ──────────────────────────────────────────────────────────────── */
+
+.hero-grid {
+  display: grid;
+  height: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  grid-template-areas:
+    "top"
+    "slot"
+    "l1"
+    "l2"
+    "meta";
+}
+.hero-grid > [data-area="top"] {
+  grid-area: top;
+}
+.hero-grid > [data-area="slot"] {
+  grid-area: slot;
+}
+.hero-grid > [data-area="l1"] {
+  grid-area: l1;
+}
+.hero-grid > [data-area="l2"] {
+  grid-area: l2;
+}
+.hero-grid > [data-area="meta"] {
+  grid-area: meta;
+}
+/* Landscape screens tuck the portrait beside REDDY; portrait screens (phones,
+   upright tablets) stack it above the name where there's height to spare. */
+@media (min-width: 768px) and (min-aspect-ratio: 1/1) {
+  .hero-grid {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+    grid-template-areas:
+      "top top"
+      ". ."
+      "l1 l1"
+      "slot l2"
+      "meta meta";
+  }
+}
+
+.hero-name {
+  font-size: var(--name-size, 25vw);
+  --wdth: var(--name-wdth, 62);
+  line-height: 0.8;
+  white-space: nowrap;
+}
+
+html.js .hero [data-frame] {
+  clip-path: inset(50% 50% 50% 50%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.js .hero-name [data-char] {
+    transform: translateY(105%);
+  }
+  html.js .hero [data-intro] {
+    opacity: 0;
+  }
+  html.js .hero [data-shutter] {
+    display: block;
+  }
+}
+
+@keyframes cue {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(300%);
+  }
+}
+
+/* ── Horizontal work track ─────────────────────────────────────────────── */
+
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  html.js .work-rail {
+    height: 100svh;
+    overflow: hidden;
+  }
+  html.js .work-track {
+    display: flex;
+    flex-wrap: nowrap;
+    width: max-content;
+    height: 100%;
+  }
+}
+
+.spread-title {
+  font-size: min(21vw, calc((100vw - 2 * var(--gutter)) / (var(--n) * 0.56)));
+}
+@media (min-width: 1024px) {
+  .spread-title {
+    font-size: min(7.6vw, 15vh, calc((43vw - 2 * var(--gutter)) / (var(--n) * 0.56)));
+  }
+}
+
+/* ── Case studies ──────────────────────────────────────────────────────── */
+
+.case-title {
+  font-size: min(21vw, 30vh, calc((100vw - 2 * var(--gutter)) / (var(--n) * 0.56)));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.js .case-hero [data-ch] {
+    transform: translateY(105%);
+  }
+  html.js .case-hero [data-ci] {
+    opacity: 0;
+  }
+  html.js .case-hero [data-cover] {
+    clip-path: inset(18% 12% 0% 12%);
+  }
+}
+
+/* ── Timeline sectors ──────────────────────────────────────────────────── */
+
+.sector-node {
+  transition:
+    background-color 0.4s,
+    border-color 0.4s,
+    transform 0.6s var(--ease-expo);
+}
+.sector-code,
+.sector-title,
+.sector p {
+  transition:
+    color 0.6s var(--ease-expo),
+    opacity 0.6s var(--ease-expo);
+}
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  html.js .sector:not(.is-lit) .sector-title,
+  html.js .sector:not(.is-lit) p {
+    opacity: 0.3;
+  }
+  html.js .sector.is-lit .sector-node {
+    background: var(--accent);
+    border-color: var(--accent);
+    transform: scale(1.35);
+  }
+  html.js .sector.is-lit .sector-code.hollow {
+    color: var(--fg);
+  }
+}
+
+/* ── Film strip ────────────────────────────────────────────────────────── */
+
+.film {
+  --hole: #ecebe6;
+  background-color: #0b0b0a;
+  background-image:
+    linear-gradient(to right, var(--hole) 0 11px, transparent 11px),
+    linear-gradient(to right, var(--hole) 0 11px, transparent 11px);
+  background-size:
+    24px 8px,
+    24px 8px;
+  background-repeat: repeat-x;
+  background-position:
+    6px 13px,
+    6px calc(100% - 13px);
+}
+
+.scroll-x {
+  scrollbar-width: none;
+}
+.scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-struck] {
+    opacity: 0.22;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
