@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { about } from "@/content/site";
+import { about, sections } from "@/content/site";
 import { gsap, useGSAP, MOTION_OK } from "@/lib/gsap";
 import { SectionHead } from "./ui/SectionHead";
 
@@ -79,14 +79,14 @@ export function About({ portrait }: { portrait: React.ReactNode }) {
   return (
     <section
       ref={root}
-      id="about"
+      id={sections.about.id}
       data-theme="ink"
-      data-index="01"
-      data-label="Who's Abhi"
+      data-index={sections.about.index}
+      data-label={sections.about.label}
       aria-labelledby="about-title"
       className="relative px-gutter pb-[18vh] pt-[16vh]"
     >
-      <SectionHead index="01" title="Who's Abhi?" aside="Profile / 2026" />
+      <SectionHead index={sections.about.index} title="Who's Abhi?" aside="Profile / 2026" />
 
       <h2 id="about-title" data-title className="display mt-8 text-[length:calc((100vw-2*var(--gutter))/5.15)] leading-[0.8]">
         <span className="sr-only">{about.title}</span>

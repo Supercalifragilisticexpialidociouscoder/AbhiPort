@@ -1,14 +1,16 @@
 import type { Project } from "@/content/projects";
+import { site } from "@/content/site";
 import { cn, pad } from "@/lib/cn";
 import { TransitionLink } from "./PageTransition";
-import { site } from "@/content/site";
 import { Known, Ph } from "./ui/Ph";
+import { StatusChip } from "./ui/StatusChip";
 import { Signature } from "./visuals/Signatures";
 
 /**
- * One project as an editorial spread: rail of metadata, a giant hollow
- * number, the title, a signature diagram and a framed cover slot.
- * On desktop these sit side by side in the horizontal track.
+ * One flagship as an editorial spread: a rail of metadata, a giant hollow
+ * number, the title, a signature diagram (or the real cover once it
+ * exists) and two ways in — the story, or straight under the hood.
+ * Desktop: side by side in the pinned track. Mobile: a swipeable card.
  */
 export function ProjectCard({
   project: p,
@@ -30,19 +32,21 @@ export function ProjectCard({
       data-cursor={research ? "Read" : "Open"}
       aria-labelledby={`spread-${p.slug}`}
       className={cn(
-        "group relative border-t border-line track:h-full track:w-[86vw] track:shrink-0 track:border-l track:border-t-0",
+        "group relative border-line",
+        "max-lg:w-[88vw] max-lg:shrink-0 max-lg:snap-start max-lg:border-r",
+        "lg:border-t track:h-full track:w-[86vw] track:shrink-0 track:border-l track:border-t-0",
         research && "track:w-[92vw]",
       )}
     >
-      <div className="flex h-full flex-col px-gutter pb-16 pt-10 lg:pb-20 track:pt-[calc(var(--nav-h)+22px)]">
+      <div className="flex h-full flex-col px-gutter pb-12 pt-8 lg:pb-20 lg:pt-10 track:pt-[calc(var(--nav-h)+22px)]">
         {/* Metadata rail */}
         <div className="label flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-line pb-3">
           <span className="tnum text-accent">
             {p.number} / {pad(total)}
           </span>
           <span>{p.category}</span>
-          <span className="ml-auto text-muted">
-            <Known value={p.status} todo="Add status" />
+          <span className="ml-auto">
+            <StatusChip status={p.status} />
           </span>
           <span className="text-muted">
             <Known value={p.year} todo="Add year" />
@@ -79,10 +83,10 @@ export function ProjectCard({
                 <p className="relative mt-6 max-w-[38ch] text-[clamp(19px,1.5vw,24px)] leading-snug">{p.tagline}</p>
                 <div className="relative mt-5 max-w-[52ch] border-l-2 border-accent pl-4">
                   <p className="label text-muted">Research question</p>
-                  <p className="mt-1.5 text-[15px] leading-relaxed">{p.study.question}</p>
+                  <p className="mt-1.5 text-[15px] leading-relaxed">{p.study?.question}</p>
                 </div>
                 <ul className="label relative mt-5 flex flex-wrap gap-1.5">
-                  {(p.study.keywords ?? []).slice(0, 6).map((k) => (
+                  {(p.study?.keywords ?? []).slice(0, 6).map((k) => (
                     <li key={k} className="border border-line px-2 py-1">
                       {k}
                     </li>
@@ -109,17 +113,17 @@ export function ProjectCard({
               </>
             )}
 
-            <TransitionLink
-              href={`/work/${p.slug}`}
-              transitionLabel={p.title}
-              data-primary
-              className="label relative mt-8 inline-flex items-center gap-3 self-start py-1"
-            >
-              <span className="grid h-10 w-10 place-items-center rounded-full border border-line transition-colors duration-300 group-hover:border-accent group-hover:bg-accent group-hover:text-bg">
-                <span className="arrow-nudge-x">→</span>
-              </span>
-              <span className="link-line">{research ? "Read the research note" : "Open case study"}</span>
-            </TransitionLink>
+            <div className="relative mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+              <TransitionLink href={`/work/${p.slug}`} transitionLabel={p.title} data-primary className="label inline-flex items-center gap-3 py-1">
+                <span className="grid h-10 w-10 place-items-center rounded-full border border-line transition-colors duration-300 group-hover:border-accent group-hover:bg-accent group-hover:text-bg">
+                  <span className="arrow-nudge-x">→</span>
+                </span>
+                <span className="link-line">{research ? "Read the research note" : "Open case study"}</span>
+              </TransitionLink>
+              <TransitionLink href={`/work/${p.slug}#under-the-hood`} transitionLabel={p.title} className="label link-line py-1 text-muted hover:text-fg">
+                Under the hood →
+              </TransitionLink>
+            </div>
           </div>
 
           {/* Visual: the real cover once it exists, otherwise the project's diagram. */}
@@ -133,7 +137,7 @@ export function ProjectCard({
                 <div className="min-h-0 flex-1 transition-transform duration-700 ease-[var(--ease-expo)] group-hover:scale-[1.012]">
                   <Signature project={p} className={research ? "" : "bg-bg/60"} />
                 </div>
-                {site.showPlaceholders ? (
+                {site.showPlaceholders && p.cover ? (
                   <p className="label mt-3 flex items-center gap-3 text-muted">
                     <span>Cover</span>
                     <Ph>Add image</Ph>

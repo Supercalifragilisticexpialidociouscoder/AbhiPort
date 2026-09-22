@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Footer } from "@/components/Footer";
 import { ProjectCaseStudy } from "@/components/ProjectCaseStudy";
-import { getProject, projects } from "@/content/projects";
+import { caseStudies, getProject } from "@/content/projects";
 import { site } from "@/content/site";
+import { publicFile } from "@/lib/assets";
 
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return projects.map((p) => ({ slug: p.slug }));
+  return caseStudies.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/work/[slug]">): Promise<Metadata> {
@@ -33,11 +34,11 @@ export async function generateMetadata({ params }: PageProps<"/work/[slug]">): P
 export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]">) {
   const { slug } = await params;
   const project = getProject(slug);
-  if (!project) notFound();
+  if (!project?.study) notFound();
   return (
     <>
-      <ProjectCaseStudy project={project} />
-      <Footer />
+      <ProjectCaseStudy project={{ ...project, study: project.study }} />
+      <Footer cvHref={publicFile(site.cv)} />
     </>
   );
 }

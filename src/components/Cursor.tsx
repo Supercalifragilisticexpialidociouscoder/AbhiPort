@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { onBootDone } from "@/lib/boot";
 import { gsap } from "@/lib/gsap";
 
 const FINE = "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)";
@@ -96,7 +97,13 @@ export function Cursor() {
     window.addEventListener("pointerdown", down);
     window.addEventListener("pointerup", up);
 
+    // Last beat of the opening sequence: the cursor wakes up with the page.
+    const cancelWake = onBootDone(() => {
+      if (shown) gsap.fromTo(d, { scale: 0 }, { scale: 1, duration: 0.8, ease: "elastic.out(1, 0.55)" });
+    });
+
     return () => {
+      cancelWake();
       window.removeEventListener("pointermove", move);
       document.removeEventListener("pointerover", over);
       document.documentElement.removeEventListener("pointerleave", leave);

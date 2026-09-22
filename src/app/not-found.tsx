@@ -18,12 +18,15 @@ export default function NotFound() {
           DNF<span className="text-accent">.</span>
         </h1>
         <div className="mt-8 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <p className="max-w-md text-[clamp(20px,1.8vw,28px)] leading-snug">This page didn&apos;t make it to the finish line. Wrong turn, or it was never built.</p>
+          <div className="max-w-md">
+            <p className="display text-[clamp(32px,3.4vw,60px)] leading-[0.9]">You took the wrong line.</p>
+            <p className="mt-3 text-[clamp(17px,1.4vw,21px)] leading-snug text-muted">This page didn&apos;t make it to the finish. Wrong turn — or it was never built.</p>
+          </div>
           <TransitionLink href="/" transitionLabel="Abhi" className="group label inline-flex items-center gap-3 self-start md:self-auto">
             <span className="grid h-10 w-10 place-items-center rounded-full border border-line transition-colors group-hover:border-accent group-hover:bg-accent group-hover:text-bg">
               <span className="arrow-nudge-x">→</span>
             </span>
-            <span className="link-line">Back to the pit lane</span>
+            <span className="link-line">Back to start</span>
           </TransitionLink>
         </div>
       </div>

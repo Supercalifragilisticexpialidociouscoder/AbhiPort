@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { contact, site } from "@/content/site";
+import { contact, sections, site } from "@/content/site";
 import { gsap, useGSAP, MOTION_OK } from "@/lib/gsap";
 import { cn, pad } from "@/lib/cn";
 import { Magnetic } from "./ui/Magnetic";
@@ -20,10 +20,10 @@ function breakable(value: string | null) {
 }
 
 /**
- * 09 — The ending. Three words that converge as you arrive, then the only
- * three ways to reach Abhi. Unknown links stay visibly unfinished.
+ * 13 — Contact. Three words that converge as you arrive, then every way to
+ * reach Abhi. Unknown links stay visibly unfinished.
  */
-export function Contact() {
+export function Contact({ cvHref }: { cvHref: string | null }) {
   const root = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
 
@@ -58,22 +58,26 @@ export function Contact() {
 
   const handle = (url: string | null) => url?.replace(/\/+$/, "").split("/").pop() ?? null;
   const rows = [
-    { k: "Email", href: site.email ? `mailto:${site.email}` : null, v: site.email, todo: "Add email" },
-    { k: "GitHub", href: site.links.github, v: site.links.github ? `@${handle(site.links.github)}` : null, todo: "Add GitHub" },
-    { k: "LinkedIn", href: site.links.linkedin, v: site.links.linkedin ? `in/${handle(site.links.linkedin)}` : null, todo: "Add LinkedIn" },
+    { k: "Email", href: site.email ? `mailto:${site.email}` : null, v: site.email, todo: "Add email", external: false },
+    { k: "LinkedIn", href: site.links.linkedin, v: site.links.linkedin ? `in/${handle(site.links.linkedin)}` : null, todo: "Add LinkedIn", external: true },
+    { k: "GitHub", href: site.links.github, v: site.links.github ? `@${handle(site.links.github)}` : null, todo: "Add GitHub", external: true },
+    ...(site.links.instagram
+      ? [{ k: "Instagram", href: site.links.instagram, v: `@${handle(site.links.instagram)}`, todo: "", external: true }]
+      : []),
+    { k: "CV", href: cvHref, v: cvHref ? "Download — PDF" : null, todo: "Add file — public/cv/abhiram-reddy-cv.pdf", external: false },
   ];
 
   return (
     <section
       ref={root}
-      id="contact"
+      id={sections.contact.id}
       data-theme="ink"
-      data-index="09"
-      data-label="Contact"
+      data-index={sections.contact.index}
+      data-label={sections.contact.label}
       aria-labelledby="contact-title"
       className="relative overflow-hidden px-gutter pb-[10vh] pt-[16vh]"
     >
-      <SectionHead index="09" title="Contact" aside="Pit wall is open" />
+      <SectionHead index={sections.contact.index} title="Contact" aside="Pit wall is open" />
 
       <h2 id="contact-title" className="display mt-10 text-[length:calc((100vw-2*var(--gutter))/4.85)] leading-[0.8]">
         {contact.lines.map((line, i) => (
@@ -103,8 +107,9 @@ export function Contact() {
               {r.href ? (
                 <a
                   href={r.href}
-                  target={r.k === "Email" ? undefined : "_blank"}
-                  rel={r.k === "Email" ? undefined : "noopener noreferrer"}
+                  target={r.external ? "_blank" : undefined}
+                  rel={r.external ? "noopener noreferrer" : undefined}
+                  download={r.k === "CV" ? true : undefined}
                   aria-label={`${r.k}: ${r.v}`}
                   className="group grid grid-cols-[2.5rem_1fr_auto] items-center gap-4 py-5 md:grid-cols-[4rem_8rem_1fr_auto]"
                 >
@@ -118,7 +123,7 @@ export function Contact() {
                   </span>
                   <Magnetic>
                     <span className="grid h-12 w-12 place-items-center rounded-full border border-line transition-colors duration-300 group-hover:border-accent group-hover:bg-accent group-hover:text-bg">
-                      <span className="arrow-nudge">↗</span>
+                      <span className="arrow-nudge">{r.k === "CV" ? "↓" : "↗"}</span>
                     </span>
                   </Magnetic>
                 </a>

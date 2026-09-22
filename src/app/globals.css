@@ -139,6 +139,7 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scrollbar-color: var(--muted) var(--bg);
+  --noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -350,6 +351,75 @@ html.lenis body {
   }
 }
 
+/* ── Boot sequence (Preloader) ─────────────────────────────────────────── */
+
+/* The head script sets data-loading before first paint, so without JS the
+   preloader never shows. It also holds scroll input while the sequence runs
+   (overflow stays put, so the scrollbar never drops and nothing shifts). */
+html:not([data-loading]) .preloader {
+  display: none;
+}
+
+.preloader {
+  --seam: 72%;
+  --boot-wmin: 62;
+  --boot-wmax: 125;
+  /* Three tabular digits of Archivo 900 at --boot-wmax, in em. */
+  --boot-k: 2.43;
+  touch-action: none;
+}
+/* Upright screens: a bigger number that stretches less. */
+@media (max-aspect-ratio: 1/1) {
+  .preloader {
+    --seam: 60%;
+    --boot-wmax: 80;
+    --boot-k: 1.63;
+  }
+}
+
+.boot-door {
+  position: absolute;
+  inset-inline: 0;
+  overflow: hidden;
+  background: #0b0b0a;
+}
+.boot-door::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: var(--noise);
+}
+.boot-seam {
+  top: calc(var(--seam) - 0.5px);
+}
+.boot-count {
+  --wdth: var(--boot-wmin);
+  font-size: min(calc((100vw - 2 * var(--gutter) - 2.5rem) / var(--boot-k)), 60vh);
+}
+.preloader [data-readout] {
+  opacity: 0;
+  visibility: hidden;
+}
+.boot-check::after {
+  content: "··";
+  color: rgb(236 235 230 / 0.35);
+}
+.boot-check[data-done]::after {
+  content: "OK";
+  color: #ecebe6;
+}
+
+/* The custom cursor wakes up with the page; until then, the native one. */
+html[data-loading] :is(.cursor-dot, .cursor-label, .cursor-cross, .cursor-coords) {
+  opacity: 0 !important;
+}
+html[data-loading].has-cursor,
+html[data-loading].has-cursor * {
+  cursor: default !important;
+}
+
 /* ── Global overlays ───────────────────────────────────────────────────── */
 
 .grain {
@@ -358,7 +428,7 @@ html.lenis body {
   z-index: 80;
   pointer-events: none;
   opacity: 0.07;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-image: var(--noise);
 }
 html[data-theme="paper"] .grain {
   opacity: 0.12;
@@ -572,6 +642,23 @@ html[data-theme="garage"] .cursor-coords {
   }
 }
 
+/* A cut-out portrait stands on the stage: bottom-anchored, sized by height,
+   cropped at the sides on narrow screens rather than shrunk. Any cut-out fits
+   (object-contain); `hero.focus` in site.ts is measured against this box. */
+.hero-figure {
+  height: 84%;
+  aspect-ratio: 9 / 10;
+}
+@media (min-width: 768px) and (min-aspect-ratio: 1/1) {
+  .hero-figure {
+    height: 94%;
+  }
+}
+.hero-figure-glow {
+  inset: 6% -32% -4%;
+  background: radial-gradient(closest-side, rgb(255 69 33 / 0.3), rgb(255 69 33 / 0.1) 55%, transparent);
+}
+
 .hero-name {
   font-size: var(--name-size, 25vw);
   --wdth: var(--name-wdth, 62);
@@ -592,6 +679,15 @@ html.js .hero [data-frame] {
   }
   html.js .hero [data-shutter] {
     display: block;
+  }
+}
+
+.caret {
+  animation: blink 1.05s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
   }
 }
 

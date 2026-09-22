@@ -2,14 +2,15 @@
 
 import { useRef } from "react";
 import type { Project } from "@/content/projects";
-import { projects } from "@/content/projects";
+import { caseStudies } from "@/content/projects";
 import { gsap, useGSAP, MOTION_OK } from "@/lib/gsap";
 import { pad } from "@/lib/cn";
 import { onPageEnter, TransitionLink } from "../PageTransition";
 import { Known } from "../ui/Ph";
+import { StatusChip } from "../ui/StatusChip";
 
 /** Opening spread of a case study. Plays once the page wipe lifts. */
-export function CaseHero({ project: p, cover }: { project: Project; cover: React.ReactNode }) {
+export function CaseHero({ project: p, cover, eyebrow }: { project: Project; cover: React.ReactNode; eyebrow?: React.ReactNode }) {
   const root = useRef<HTMLElement>(null);
   const research = p.kind === "research";
   const longest = Math.max(...p.titleLines.map((l) => l.length));
@@ -38,7 +39,6 @@ export function CaseHero({ project: p, cover }: { project: Project; cover: React
     { k: "Type", v: p.category },
     { k: "Role", v: p.role, todo: "Add role" },
     { k: "Year", v: p.year, todo: "Add year" },
-    { k: "Status", v: p.status, todo: "Add status" },
   ];
 
   return (
@@ -57,7 +57,11 @@ export function CaseHero({ project: p, cover }: { project: Project; cover: React
             <span className="link-line">All work</span>
           </TransitionLink>
           <span className="text-muted">
-            {research ? "Research note" : "Case study"} <span className="tnum text-accent">{p.number}</span> / {pad(projects.length)}
+            {eyebrow ?? (
+              <>
+                {research ? "Research note" : "Case study"} <span className="tnum text-accent">{p.number}</span> / {pad(caseStudies.length)}
+              </>
+            )}
           </span>
         </div>
 
@@ -100,6 +104,12 @@ export function CaseHero({ project: p, cover }: { project: Project; cover: React
                 </dd>
               </div>
             ))}
+            <div data-ci className="border-t border-line pt-3">
+              <dt className="label text-muted">Status</dt>
+              <dd className="mt-1.5">
+                <StatusChip status={p.status} />
+              </dd>
+            </div>
           </dl>
         </div>
       </div>

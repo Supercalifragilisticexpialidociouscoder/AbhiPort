@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { beyond } from "@/content/site";
+import { beyond, sections } from "@/content/site";
 import { gsap, useGSAP, MOTION_OK } from "@/lib/gsap";
 import { pad } from "@/lib/cn";
 import { SectionHead } from "./ui/SectionHead";
 import { Ph } from "./ui/Ph";
 
 /**
- * 08 — Off-track. Everything that isn't code, laid out as a contact sheet
+ * 12 — Off-track. Everything that isn't code, laid out as a contact sheet
  * on a strip of film. Drag it (mouse), swipe it (touch) or scroll it with
  * the keyboard. Frames are placeholders until real photos land in /public.
  */
@@ -93,15 +93,15 @@ export function BeyondCode({ media }: { media: React.ReactNode[] }) {
   return (
     <section
       ref={root}
-      id="beyond"
+      id={sections.beyond.id}
       data-theme="paper"
-      data-index="08"
-      data-label="Off-track"
+      data-index={sections.beyond.index}
+      data-label={sections.beyond.label}
       aria-labelledby="beyond-title"
       className="relative overflow-hidden pb-[14vh] pt-[16vh]"
     >
       <div className="px-gutter">
-        <SectionHead index="08" title="Off-track" aside="Contact sheet" />
+        <SectionHead index={sections.beyond.index} title="Off-track" aside="Creative · media · the rest" />
         <div className="mt-8 grid gap-8 lg:grid-cols-12 lg:gap-6">
           <h2 id="beyond-title" className="display text-[clamp(88px,17vw,330px)] lg:col-span-8">
             {beyond.title}

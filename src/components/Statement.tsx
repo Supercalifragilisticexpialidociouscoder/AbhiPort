@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { statement } from "@/content/site";
+import { sections, statement } from "@/content/site";
 import { gsap, useGSAP, MOTION_OK } from "@/lib/gsap";
 import { SectionHead } from "./ui/SectionHead";
 
@@ -49,20 +49,21 @@ export function Statement() {
   return (
     <section
       ref={root}
+      id={sections.statement.id}
       data-theme="paper"
-      data-index="02"
-      data-label="Logbook"
+      data-index={sections.statement.index}
+      data-label={sections.statement.label}
       aria-labelledby="statement-title"
       className="relative"
     >
       <div data-pin className="flex min-h-svh flex-col px-gutter pb-[8vh] pt-[calc(var(--nav-h)+4vh)]">
-        <SectionHead index="02" title="A note on this site" aside="Read before scrolling" />
+        <SectionHead index={sections.statement.index} title="A note on this site" aside="Read before scrolling" />
 
         <h2 id="statement-title" className="sr-only">
-          This is a logbook, not a portfolio.
+          This is a work in progress, not a portfolio.
         </h2>
 
-        <p aria-hidden className="display mt-auto pt-10 text-[length:min(calc((100vw-2*var(--gutter))/4.9),24vh)] leading-[0.8]">
+        <p aria-hidden className="display mt-auto pt-10 text-[length:min(calc((100vw-2*var(--gutter))/4.9),16.5vh)] leading-[0.8]">
           <span className="mask">
             <span data-in className="block">
               {statement.lead}
