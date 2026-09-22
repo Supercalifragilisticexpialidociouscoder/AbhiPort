@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, type ComponentProps } from "react";
+import { onBootReveal } from "@/lib/boot";
 import { gsap, ScrollTrigger, REDUCED } from "@/lib/gsap";
 import { getLenis, scrollToTarget } from "@/lib/scroll";
 
@@ -19,14 +20,13 @@ export function usePageNav() {
   return useContext(TransitionContext);
 }
 
-/** Run `cb` once the page is visible: now, or after an in-flight wipe. */
+/** Run `cb` once the page is visible: now, after an in-flight wipe, or as the preloader opens. */
 export function onPageEnter(cb: () => void) {
   if (document.documentElement.dataset.transitioning === "true") {
     window.addEventListener("page:enter", cb, { once: true });
     return () => window.removeEventListener("page:enter", cb);
   }
-  cb();
-  return () => {};
+  return onBootReveal(cb);
 }
 
 export function PageTransition({ children }: { children: React.ReactNode }) {

@@ -1,28 +1,30 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { races } from "@/content/site";
+import { races, sections } from "@/content/site";
 import { gsap, useGSAP, MOTION_OK, REDUCED } from "@/lib/gsap";
 import { cn, pad } from "@/lib/cn";
+import { TransitionLink } from "./PageTransition";
 import { SectionHead } from "./ui/SectionHead";
 import { Known, Ph } from "./ui/Ph";
 
 const SESSION_STYLE: Record<string, string> = {
   Race: "bg-accent text-bg border-accent",
-  Community: "border-fg text-fg",
   Practice: "border-line text-muted",
 };
 
 /**
- * 05 — Race weekends. Hackathons as a timing sheet. No invented positions:
- * results stay [ADD …] until they're real. The session clock counts the
- * time you spend here, and only while you're actually looking.
+ * 06 — Race weekends. Hackathons as evidence of execution under pressure,
+ * not an identity: the credential, the process behind it, the problem
+ * statements, and a timing sheet with no invented results. The session
+ * clock counts the time you spend here — only while you're looking.
  */
 export function Hackathons() {
   const root = useRef<HTMLElement>(null);
   const clock = useRef<HTMLSpanElement>(null);
-  const [open, setOpen] = useState<number | null>(null);
+  const [open, setOpen] = useState<number | null>(0);
   const uid = useId();
+  const s = sections.races;
 
   useEffect(() => {
     const el = root.current;
@@ -36,9 +38,9 @@ export function Hackathons() {
     let visible = false;
     const fmt = (ms: number) => {
       const m = Math.floor(ms / 60000);
-      const s = Math.floor(ms / 1000) % 60;
+      const sec = Math.floor(ms / 1000) % 60;
       const cs = Math.floor(ms / 10) % 100;
-      return reduce ? `${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}.${pad(cs)}`;
+      return reduce ? `${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}.${pad(cs)}`;
     };
     const tick = () => {
       c.textContent = fmt(total + performance.now() - start);
@@ -59,7 +61,7 @@ export function Hackathons() {
           c.textContent = fmt(total);
         }
       },
-      { threshold: 0.12 },
+      { threshold: 0.08 },
     );
     io.observe(el);
     return () => {
@@ -79,6 +81,21 @@ export function Hackathons() {
           { yPercent: 105, y: 0 },
           { yPercent: 0, duration: 1.2, stagger: 0.1, ease: "expo.out", scrollTrigger: { trigger: q("[data-race-title]")[0], start: "top 85%", once: true } },
         );
+
+        // The lap: each stage lights as the line reaches it.
+        const steps = q("[data-lap-step]");
+        const lap = gsap.timeline({ scrollTrigger: { trigger: q("[data-lap]")[0], start: "top 78%", end: "bottom 45%", scrub: 0.6 } });
+        lap.fromTo(q("[data-lap-fill]"), { scaleX: 0 }, { scaleX: 1, ease: "none", duration: steps.length }, 0);
+        steps.forEach((st, i) => {
+          lap.fromTo(st, { opacity: 0.25 }, { opacity: 1, duration: 0.4, ease: "none" }, i + 0.1);
+        });
+
+        gsap.fromTo(
+          q("[data-cred]"),
+          { yPercent: 40, opacity: 0 },
+          { yPercent: 0, opacity: 1, duration: 1.3, ease: "expo.out", scrollTrigger: { trigger: q("[data-cred]")[0], start: "top 85%", once: true } },
+        );
+
         const rows = q("[data-row]");
         const tl = gsap.timeline({ scrollTrigger: { trigger: q("[data-sheet]")[0], start: "top 80%", once: true } });
         tl.fromTo(rows, { opacity: 0, x: -24 }, { opacity: 1, x: 0, duration: 0.9, stagger: 0.12, ease: "expo.out" }).fromTo(
@@ -95,14 +112,22 @@ export function Hackathons() {
   return (
     <section
       ref={root}
-      id="races"
+      id={s.id}
       data-theme="garage"
-      data-index="05"
-      data-label="Race weekends"
+      data-index={s.index}
+      data-label={s.label}
       aria-labelledby="races-title"
-      className="relative px-gutter pb-[16vh] pt-[12vh]"
+      className="relative px-gutter pb-[16vh] pt-[16vh]"
     >
-      <SectionHead index="05" title="Race weekends" aside="Timing sheet — unofficial" />
+      <SectionHead
+        index={s.index}
+        title={races.title}
+        aside={
+          <span className="flex items-center gap-2">
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" /> Telemetry mode · timing sheet
+          </span>
+        }
+      />
 
       <div className="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-6">
         <h2 id="races-title" data-race-title className="display text-[clamp(76px,13.5vw,260px)] lg:col-span-8">
@@ -119,7 +144,10 @@ export function Hackathons() {
         </h2>
 
         <div className="flex flex-col justify-end gap-8 lg:col-span-4">
-          <p className="text-[clamp(18px,1.4vw,22px)] leading-snug">{races.lead}</p>
+          <div>
+            <p className="text-[clamp(18px,1.4vw,22px)] leading-snug">{races.lead}</p>
+            <p className="label mt-4 text-muted">{races.note}</p>
+          </div>
           <div className="border border-line">
             <div className="label flex items-center justify-between border-b border-line px-4 py-2.5">
               <span className="flex items-center gap-2">
@@ -137,7 +165,44 @@ export function Hackathons() {
         </div>
       </div>
 
-      <div data-sheet className="mt-16">
+      {/* The credential */}
+      <div className="mt-16 grid items-end gap-6 border-t border-fg pt-6 lg:grid-cols-12">
+        <p data-cred className="display tnum text-[clamp(140px,22vw,400px)] leading-[0.78] text-accent lg:col-span-5">
+          {races.credential.value}
+        </p>
+        <div className="lg:col-span-7 lg:pb-4">
+          <p className="display text-[clamp(40px,5vw,96px)] leading-[0.88]">{races.credential.label}</p>
+          <p className="label mt-4 text-muted">{races.credential.note}</p>
+        </div>
+      </div>
+
+      {/* The lap: how a weekend actually goes */}
+      <div data-lap className="relative mt-16">
+        <p className="label mb-5 text-muted">One lap, every time</p>
+        <div className="relative">
+          <span aria-hidden className="absolute left-0 right-0 top-[7px] hidden h-px bg-line md:block" />
+          <span aria-hidden data-lap-fill className="absolute left-0 right-0 top-[7px] hidden h-[2px] origin-left -translate-y-px bg-accent md:block" />
+          <ol className="relative grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4 md:grid-cols-7 md:gap-x-4">
+            {races.process.map((st, i) => {
+              const last = i === races.process.length - 1;
+              return (
+                <li key={st.label} data-lap-step>
+                  <span aria-hidden className={cn("block h-[15px] w-[15px] rounded-full border-2 bg-bg", last ? "border-accent bg-accent" : "border-fg")} />
+                  <p className="label tnum mt-4 text-muted">{pad(i + 1)}</p>
+                  <p className={cn("display mt-1 text-[clamp(28px,2.4vw,42px)] leading-[0.9]", last && "text-accent")}>
+                    {st.label}
+                    {last ? <span className="tnum"> ×2</span> : null}
+                  </p>
+                  <p className="mt-2 text-[14px] leading-snug text-muted">{st.note}</p>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      </div>
+
+      {/* Timing sheet */}
+      <div data-sheet className="mt-20">
         <div aria-hidden className="label hidden grid-cols-[3rem_7.5rem_1fr_12rem_8rem_9rem_2.5rem] gap-4 border-b border-fg pb-2 text-muted lg:grid">
           <span>#</span>
           <span>Session</span>
@@ -173,7 +238,7 @@ export function Hackathons() {
                   <span className="label col-start-2 lg:col-start-auto">
                     <Known value={r.date} todo="Add date" />
                   </span>
-                  <span className="label col-start-2 lg:col-start-auto">
+                  <span className={cn("label col-start-2 lg:col-start-auto", r.result && "text-accent")}>
                     <Known value={r.result} todo="Add result" />
                   </span>
                   <span
@@ -186,11 +251,42 @@ export function Hackathons() {
                     +
                   </span>
                 </button>
-                <div id={panelId} hidden={!isOpen} className="grid gap-4 pb-6 pl-4 lg:grid-cols-[3rem_7.5rem_1fr] lg:gap-4 lg:pl-5">
+                <div id={panelId} hidden={!isOpen} className="grid gap-4 pb-8 pl-4 lg:grid-cols-[3rem_7.5rem_1fr] lg:pl-5">
                   <span className="hidden lg:block" />
                   <span className="hidden lg:block" />
-                  <div className="max-w-2xl space-y-3 text-[16px] leading-relaxed text-muted">
-                    {r.detail ? <p>{r.detail}</p> : null}
+                  <div className="max-w-3xl space-y-5">
+                    {r.detail ? <p className="text-[16px] leading-relaxed text-muted">{r.detail}</p> : null}
+                    {r.statements?.length ? (
+                      <ul className="border-t border-line">
+                        {r.statements.map((ps) => {
+                          const inner = (
+                            <>
+                              <span className="label tnum text-accent">{ps.code}</span>
+                              <span className="text-[17px] font-medium">{ps.title}</span>
+                              <span className="label text-muted">{[ps.org, ps.concept].filter(Boolean).join(" · ")}</span>
+                            </>
+                          );
+                          return (
+                            <li key={ps.code + ps.title} className="border-b border-line">
+                              {ps.href ? (
+                                <TransitionLink
+                                  href={ps.href}
+                                  transitionLabel={ps.title}
+                                  className="group/ps grid gap-1 py-3 md:grid-cols-[6rem_1fr_auto] md:items-baseline md:gap-4"
+                                >
+                                  {inner}
+                                  <span className="label hidden text-accent md:block">
+                                    Case study <span className="inline-block transition-transform group-hover/ps:translate-x-1">→</span>
+                                  </span>
+                                </TransitionLink>
+                              ) : (
+                                <div className="grid gap-1 py-3 md:grid-cols-[6rem_1fr_auto] md:items-baseline md:gap-4">{inner}</div>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : null}
                     {r.notes ? <p className="text-fg">{r.notes}</p> : <Ph>Add notes — what you built, what happened</Ph>}
                   </div>
                 </div>
@@ -198,6 +294,18 @@ export function Hackathons() {
             );
           })}
         </ol>
+      </div>
+
+      {/* What race weekends train */}
+      <div className="mt-14 grid gap-6 lg:grid-cols-12">
+        <p className="label text-muted lg:col-span-3">What a race weekend trains</p>
+        <ul className="flex flex-wrap gap-1.5 lg:col-span-9">
+          {races.skills.map((k) => (
+            <li key={k} className="label border border-line px-2.5 py-1.5">
+              {k}
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );

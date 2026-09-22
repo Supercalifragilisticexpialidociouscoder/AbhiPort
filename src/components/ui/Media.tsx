@@ -16,6 +16,8 @@ type MediaProps = {
   label?: string;
   glow?: boolean;
   compact?: boolean;
+  /** "contain" for cut-outs on transparency, which shouldn't be cropped. */
+  fit?: "cover" | "contain";
 };
 
 /**
@@ -23,11 +25,11 @@ type MediaProps = {
  * otherwise a clearly-marked placeholder frame. Always fills its parent,
  * so give the parent a size (aspect ratio or explicit height).
  */
-export function Media({ src, alt, sizes = "100vw", eager, className, label, glow, compact }: MediaProps) {
+export function Media({ src, alt, sizes = "100vw", eager, className, label, glow, compact, fit = "cover" }: MediaProps) {
   const asset = resolveAsset(src);
   if (!asset) return <MediaSlot path={src} label={label} glow={glow} compact={compact} />;
   if (asset.kind === "video") {
-    return <MediaVideo src={asset.url} label={alt} className={cn("absolute inset-0 h-full w-full object-cover", className)} />;
+    return <MediaVideo src={asset.url} label={alt} critical={eager} className={cn("absolute inset-0 h-full w-full object-cover", className)} />;
   }
   return (
     <Image
@@ -37,7 +39,9 @@ export function Media({ src, alt, sizes = "100vw", eager, className, label, glow
       sizes={sizes}
       loading={eager ? "eager" : "lazy"}
       fetchPriority={eager ? "high" : undefined}
-      className={cn("object-cover", className)}
+      // Above-the-fold media: the preloader waits for it (and only it).
+      data-critical={eager ? "" : undefined}
+      className={cn(fit === "contain" ? "object-contain" : "object-cover", className)}
     />
   );
 }

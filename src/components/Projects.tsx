@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef } from "react";
-import { projects } from "@/content/projects";
-import { work } from "@/content/site";
+import { useEffect, useRef } from "react";
+import { featuredProjects, projects } from "@/content/projects";
+import { sections, work } from "@/content/site";
 import { gsap, useGSAP, MOTION_OK, DESKTOP } from "@/lib/gsap";
 import { pad } from "@/lib/cn";
 import { scrollToTarget } from "@/lib/scroll";
@@ -11,12 +11,16 @@ import { TransitionLink } from "./PageTransition";
 import { SectionHead } from "./ui/SectionHead";
 
 /**
- * 03 — Work. On desktop the section pins and the projects travel sideways
- * as you scroll, each spread with its own parallax. On mobile (and for
- * reduced motion) they simply stack.
+ * 04 — Featured work. Desktop: the section pins and the flagships travel
+ * sideways as you scroll, each spread with its own parallax. Mobile: a
+ * swipeable row of cards. Reduced motion on desktop: they simply stack.
  */
 export function Projects({ covers }: { covers: Record<string, React.ReactNode> }) {
   const root = useRef<HTMLElement>(null);
+  const swipeCount = useRef<HTMLSpanElement>(null);
+  const swipeBar = useRef<HTMLSpanElement>(null);
+  const s = sections.work;
+  const total = featuredProjects.length;
 
   useGSAP(
     () => {
@@ -35,6 +39,12 @@ export function Projects({ covers }: { covers: Record<string, React.ReactNode> }
             scrollTrigger: { trigger: q("[data-work-title]")[0], start: "top 85%", once: true },
           },
         );
+        // Three lines, the last one lands on its own beat.
+        const use = q("[data-in-use]")[0];
+        gsap
+          .timeline({ scrollTrigger: { trigger: use, start: "top 78%", once: true } })
+          .fromTo(q("[data-use-line]"), { yPercent: 105, y: 0 }, { yPercent: 0, duration: 1.1, stagger: 0.14, ease: "expo.out" })
+          .fromTo(q("[data-use-step]"), { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.7, stagger: 0.08, ease: "expo.out" }, 0.45);
       });
 
       mm.add(`${MOTION_OK} and ${DESKTOP}`, () => {
@@ -58,7 +68,7 @@ export function Projects({ covers }: { covers: Record<string, React.ReactNode> }
             invalidateOnRefresh: true,
             anticipatePin: 1,
             onRefresh: () => {
-              lefts = spreads.map((s) => s.offsetLeft);
+              lefts = spreads.map((el) => el.offsetLeft);
             },
             onUpdate: (self) => {
               bar.style.transform = `scaleX(${self.progress.toFixed(4)})`;
@@ -84,11 +94,11 @@ export function Projects({ covers }: { covers: Record<string, React.ReactNode> }
         // track brings it into view (instead of the browser scrolling the rail).
         const onFocus = (e: FocusEvent) => {
           const spread = (e.target as HTMLElement).closest<HTMLElement>("[data-spread]");
-          const s = tween.scrollTrigger;
-          if (!spread || !s) return;
+          const st = tween.scrollTrigger;
+          if (!spread || !st) return;
           rail.scrollLeft = 0;
           const ratio = distance() ? Math.min(1, spread.offsetLeft / distance()) : 0;
-          scrollToTarget(s.start + ratio * (s.end - s.start), { immediate: true });
+          scrollToTarget(st.start + ratio * (st.end - st.start), { immediate: true });
         };
         rail.addEventListener("focusin", onFocus);
         return () => rail.removeEventListener("focusin", onFocus);
@@ -96,6 +106,22 @@ export function Projects({ covers }: { covers: Record<string, React.ReactNode> }
     },
     { scope: root },
   );
+
+  // Mobile swipe row: live "02 / 04" counter and progress hairline.
+  useEffect(() => {
+    const track = root.current?.querySelector<HTMLElement>("[data-track]");
+    if (!track) return;
+    const onScroll = () => {
+      if (window.innerWidth >= 1024) return;
+      const max = track.scrollWidth - track.clientWidth;
+      const p = max > 0 ? track.scrollLeft / max : 0;
+      if (swipeBar.current) swipeBar.current.style.transform = `scaleX(${Math.max(0.04, p)})`;
+      if (swipeCount.current) swipeCount.current.textContent = pad(Math.min(total, Math.round(p * (total - 1)) + 1));
+    };
+    track.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => track.removeEventListener("scroll", onScroll);
+  }, [total]);
 
   // The whole spread is clickable; the real link stays the accessible target.
   const onTrackClick = (e: React.MouseEvent) => {
@@ -108,15 +134,15 @@ export function Projects({ covers }: { covers: Record<string, React.ReactNode> }
   return (
     <section
       ref={root}
-      id="work"
+      id={s.id}
       data-theme="ink"
-      data-index="03"
-      data-label="Work"
+      data-index={s.index}
+      data-label={s.label}
       aria-labelledby="work-title"
       className="relative"
     >
-      <header className="px-gutter pb-[10vh] pt-[16vh]">
-        <SectionHead index="03" title="Selected work" aside={`${pad(projects.length)} projects`} />
+      <header className="px-gutter pb-[8vh] pt-[16vh]">
+        <SectionHead index={s.index} title="Featured work" aside={`${pad(total)} flagships · ${pad(projects.length)} in the archive`} />
         <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <h2 id="work-title" data-work-title className="display whitespace-nowrap text-[length:calc((100vw-2*var(--gutter))/2.9)] leading-[0.78] lg:text-[min(25vw,52vh)]">
             <span className="sr-only">{work.title}</span>
@@ -127,7 +153,7 @@ export function Projects({ covers }: { covers: Record<string, React.ReactNode> }
                 </span>
               ))}
               <sup data-work-char className="label ml-2 inline-block align-top text-[clamp(14px,1.4vw,20px)] text-accent">
-                ({pad(projects.length)})
+                ({pad(total)})
               </sup>
             </span>
           </h2>
@@ -139,24 +165,88 @@ export function Projects({ covers }: { covers: Record<string, React.ReactNode> }
             </p>
           </div>
         </div>
+        {/* From code to use: some of the work leaves the portfolio. */}
+        <div id={work.inUse.id} data-in-use className="mt-[12vh] scroll-mt-[calc(var(--nav-h)+24px)] border-t border-line pt-8">
+          <div className="grid gap-10 lg:grid-cols-12 lg:gap-6">
+            <p className="display text-[clamp(34px,4.6vw,88px)] leading-[0.94] lg:col-span-7">
+              {work.inUse.lines.map((line, i) => {
+                const last = i === work.inUse.lines.length - 1;
+                return (
+                  <span key={line} className="mask">
+                    <span data-use-line className={last ? "block" : "block text-muted"}>
+                      {last ? (
+                        <>
+                          {line.replace(/\.$/, "")}
+                          <span className="text-accent">.</span>
+                        </>
+                      ) : (
+                        line
+                      )}
+                    </span>
+                  </span>
+                );
+              })}
+            </p>
+            <div className="flex flex-col justify-end gap-5 lg:col-span-5 lg:pb-2">
+              <p className="label flex items-center gap-2 text-accent">
+                <span aria-hidden className="h-1.5 w-1.5 bg-accent" />
+                {work.inUse.label}
+              </p>
+              <p className="max-w-[40ch] text-[clamp(19px,1.5vw,24px)] leading-snug">{work.inUse.body}</p>
+              <p className="max-w-[44ch] text-[15px] leading-relaxed text-muted">{work.inUse.privacy}</p>
+            </div>
+          </div>
+          <ol aria-label="How the work leaves the portfolio" className="mt-10 grid grid-cols-2 gap-px border border-line bg-line md:grid-cols-4">
+            {work.inUse.path.map((step, i) => {
+              const last = i === work.inUse.path.length - 1;
+              return (
+                <li key={step} data-use-step className="flex items-center justify-between gap-3 bg-bg px-4 py-4 md:px-5">
+                  <span className="label">
+                    <span className="tnum text-muted">{pad(i + 1)}</span>
+                    <span className={last ? "ml-3 text-accent" : "ml-3"}>{step}</span>
+                  </span>
+                  <span aria-hidden className="label text-accent">
+                    {last ? "■" : "→"}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+
+        {/* Mobile: swipe hint + progress */}
+        <div aria-hidden className="label mt-10 flex items-center gap-4 lg:hidden">
+          <span className="tnum text-accent">
+            <span ref={swipeCount}>01</span> / {pad(total)}
+          </span>
+          <span className="relative h-px flex-1 bg-line">
+            <span ref={swipeBar} className="absolute inset-0 origin-left bg-fg" style={{ transform: "scaleX(0.04)" }} />
+          </span>
+          <span className="text-muted">Swipe →</span>
+        </div>
       </header>
 
       <div data-rail className="work-rail relative">
-        <div data-track className="work-track relative" onClick={onTrackClick}>
-          {projects.map((p) => (
-            <ProjectCard key={p.slug} project={p} total={projects.length} cover={covers[p.slug]} />
+        <div
+          data-track
+          data-lenis-prevent-horizontal
+          className="work-track scroll-x relative max-lg:flex max-lg:snap-x max-lg:snap-mandatory max-lg:overflow-x-auto max-lg:border-y max-lg:border-line"
+          onClick={onTrackClick}
+        >
+          {featuredProjects.map((p) => (
+            <ProjectCard key={p.slug} project={p} total={total} cover={covers[p.slug]} />
           ))}
 
-          <div className="flex flex-col justify-center border-t border-line px-gutter py-20 track:h-full track:w-[44vw] track:shrink-0 track:border-l track:border-t-0">
-            <p className="label text-muted">That&apos;s the list — for now.</p>
-            <p className="display mt-6 text-[clamp(64px,6.4vw,128px)]">
-              More in
+          <div className="flex flex-col justify-center px-gutter py-16 max-lg:w-[80vw] max-lg:shrink-0 max-lg:snap-start lg:border-t lg:border-line lg:py-20 track:h-full track:w-[44vw] track:shrink-0 track:border-l track:border-t-0">
+            <p className="label text-muted">That&apos;s the shortlist.</p>
+            <p className="display mt-6 text-[clamp(56px,6.4vw,128px)]">
+              {projects.length - total} more
               <br />
-              the garage<span className="text-accent">.</span>
+              in the archive<span className="text-accent">.</span>
             </p>
-            <p className="mt-6 max-w-sm text-muted">Hardware, experiments and the stuff that isn&apos;t a product yet.</p>
-            <TransitionLink href="/#garage" className="group label mt-8 inline-flex items-center gap-3 self-start">
-              <span className="link-line">Open the garage</span>
+            <p className="mt-6 max-w-sm text-muted">Prototypes, hackathon builds, hardware experiments, community systems — and this website.</p>
+            <TransitionLink href="/#archive" className="group label mt-8 inline-flex items-center gap-3 self-start">
+              <span className="link-line">Open the archive</span>
               <span className="arrow-nudge-x text-accent">↓</span>
             </TransitionLink>
           </div>
@@ -167,9 +257,9 @@ export function Projects({ covers }: { covers: Record<string, React.ReactNode> }
             01
           </span>
           <span className="relative h-px flex-1 bg-line">
-            <span data-bar className="absolute inset-0 origin-left scale-x-0 bg-fg" />
+            <span data-bar className="absolute inset-0 origin-left bg-fg" style={{ transform: "scaleX(0)" }} />
           </span>
-          <span className="tnum text-muted">{pad(projects.length)}</span>
+          <span className="tnum text-muted">{pad(total)}</span>
         </div>
       </div>
     </section>

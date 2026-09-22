@@ -1,11 +1,12 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { SECTION_TOTAL } from "@/content/site";
 
 /** What the nav's section indicator shows. Written by ScrollDirector. */
 export type SectionState = { index: string; label: string; total: string };
 
-const initial: SectionState = { index: "00", label: "Start", total: "09" };
+const initial: SectionState = { index: "00", label: "Start", total: String(SECTION_TOTAL).padStart(2, "0") };
 let state = initial;
 const listeners = new Set<() => void>();
 

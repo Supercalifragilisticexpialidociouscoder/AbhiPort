@@ -1,14 +1,14 @@
 "use client";
 
 import { useRef } from "react";
-import { timeline } from "@/content/site";
+import { buildLog, sections } from "@/content/site";
 import { gsap, ScrollTrigger, useGSAP, MOTION_OK, DESKTOP } from "@/lib/gsap";
 import { cn } from "@/lib/cn";
 import { SectionHead } from "./ui/SectionHead";
 import { Ph } from "./ui/Ph";
 
 /**
- * 06 — The line so far. A racing line through what happened, in order.
+ * 09 — Build log. A racing line through what happened, in order.
  * Desktop: pinned and driven sideways, the line draws itself and each
  * sector lights up as it crosses the marker. Mobile: a vertical line.
  * Years stay empty rather than guessed.
@@ -71,36 +71,36 @@ export function Timeline() {
   return (
     <section
       ref={root}
-      id="timeline"
+      id={sections.log.id}
       data-theme="ink"
-      data-index="06"
-      data-label="The line"
+      data-index={sections.log.index}
+      data-label={sections.log.label}
       aria-labelledby="timeline-title"
       className="relative"
     >
       <div className="px-gutter pt-[16vh]">
-        <SectionHead index="06" title="The line so far" aside="Sectors, not dates" />
+        <SectionHead index={sections.log.index} title={buildLog.title} aside="Under construction — by design" />
         <div data-tl-head className="mt-8 grid gap-8 lg:grid-cols-12 lg:gap-6">
           <h2 id="timeline-title" className="display text-[clamp(64px,11vw,210px)] lg:col-span-8">
             <span className="mask">
               <span data-tl-title className="block">
-                The line
+                Build
               </span>
             </span>
             <span className="mask">
               <span data-tl-title className="block">
-                so far<span className="text-accent">.</span>
+                log<span className="text-accent">.</span>
               </span>
             </span>
           </h2>
-          <p className="max-w-sm self-end text-[clamp(18px,1.4vw,22px)] leading-snug text-muted lg:col-span-4">{timeline.lead}</p>
+          <p className="max-w-sm self-end text-[clamp(18px,1.4vw,22px)] leading-snug text-muted lg:col-span-4">{buildLog.lead}</p>
         </div>
       </div>
 
       <div data-tl-pin className="relative mt-16 track:mt-0 track:h-svh track:overflow-hidden">
         <div aria-hidden className="label pointer-events-none absolute inset-x-gutter top-[calc(var(--nav-h)+4vh)] z-10 hidden justify-between text-muted track:flex">
           <span>
-            <span className="text-accent">(06)</span> The line so far — in order
+            <span className="text-accent">({sections.log.index})</span> Build log — in order
           </span>
           <span>Years only where there are receipts</span>
         </div>
@@ -109,7 +109,7 @@ export function Timeline() {
           <span aria-hidden className="absolute inset-x-0 top-[calc(50%_+_(var(--nav-h)_+_4vh)_/_2)] hidden h-px bg-line track:block" />
           <span data-tl-line aria-hidden className="absolute inset-x-0 top-[calc(50%_+_(var(--nav-h)_+_4vh)_/_2)] hidden h-[2px] origin-left -translate-y-px bg-accent track:block" />
 
-          {timeline.sectors.map((s) => (
+          {buildLog.sectors.map((s) => (
             <li
               key={s.code}
               data-sector

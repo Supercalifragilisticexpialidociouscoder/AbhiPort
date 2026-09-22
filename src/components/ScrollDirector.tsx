@@ -26,16 +26,36 @@ export function ScrollDirector({ total }: { total?: number }) {
         sectionStore.set({ index: el.dataset.index, label: el.dataset.label, total: String(count).padStart(2, "0") });
       }
     };
-    activate(sections[0]);
 
-    const triggers = sections.map((el) =>
-      ScrollTrigger.create({
-        trigger: el,
-        start: "top 55%",
-        end: "bottom 55%",
-        onToggle: (self) => self.isActive && activate(el),
-      }),
-    );
+    // The active chapter is simply the last one whose top has crossed 55% of
+    // the viewport. Computed from position (not enter/leave events) so even a
+    // one-frame jump — End key, scrollbar drag — lands on the right theme.
+    let tops: number[] = [];
+    let current = -1;
+    const measure = () => {
+      tops = sections.map((el) => el.getBoundingClientRect().top + window.scrollY);
+    };
+    const update = () => {
+      const line = window.scrollY + window.innerHeight * 0.55;
+      let i = 0;
+      for (let k = 0; k < tops.length; k++) if (tops[k] <= line) i = k;
+      if (i !== current) {
+        current = i;
+        activate(sections[i]);
+      }
+    };
+    measure();
+    update();
+
+    const master = ScrollTrigger.create({
+      start: 0,
+      end: "max",
+      onUpdate: update,
+      onRefresh: () => {
+        measure();
+        update();
+      },
+    });
 
     ScrollTrigger.refresh();
 
@@ -53,7 +73,7 @@ export function ScrollDirector({ total }: { total?: number }) {
     }
 
     return () => {
-      triggers.forEach((t) => t.kill());
+      master.kill();
       html.classList.remove("theme-sync");
       html.dataset.theme = "ink";
     };

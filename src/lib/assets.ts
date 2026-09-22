@@ -29,3 +29,9 @@ export function resolveAsset(base: string): ResolvedAsset | null {
   cache.set(base, found);
   return found;
 }
+
+/** A file in /public by exact path (e.g. "cv/abhiram-reddy-cv.pdf"), or null if it isn't there yet. */
+export function publicFile(file: string): string | null {
+  const clean = file.replace(/^\/+/, "");
+  return fs.existsSync(path.join(process.cwd(), "public", clean)) ? `/${clean}` : null;
+}

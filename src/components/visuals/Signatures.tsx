@@ -1,19 +1,17 @@
 import type { Project, Step } from "@/content/projects";
 import { mulberry32 } from "@/lib/prng";
-import { cn, pad } from "@/lib/cn";
+import { cn } from "@/lib/cn";
 
 /**
  * Each project gets a "signature" — a small diagram built from what the
- * project actually is (its real flow, modules or pipeline). They're labelled
+ * project actually is (its real flow, gate or pipeline). They're labelled
  * as illustrations: no fake screenshots, no invented numbers.
  */
 
 export function Signature({ project, className }: { project: Project; className?: string }) {
   switch (project.visual) {
     case "approval":
-      return <ApprovalChain steps={project.study.flow.steps} className={className} />;
-    case "modules":
-      return <ModuleBoard modules={project.study.modules ?? []} className={className} />;
+      return <ApprovalChain steps={project.study?.flow.steps ?? []} className={className} />;
     case "terminal":
       return <CommitGate className={className} />;
     case "pixels":
@@ -89,32 +87,7 @@ export function QrGlyph({ className }: { className?: string }) {
   );
 }
 
-/* ── 02 · Sri Ram Enterprises — the module map ──────────────────────── */
-
-export function ModuleBoard({ modules, className }: { modules: string[]; className?: string }) {
-  return (
-    <Frame title="Module map" aside={`${pad(modules.length)} modules`} className={className}>
-      <ol className="mt-5 grid flex-1 grid-cols-2 content-between gap-x-5">
-        {modules.map((m, i) => (
-          <li
-            key={m}
-            className="flex items-baseline justify-between gap-3 border-b border-line py-[0.55rem] transition-colors duration-300 group-hover:text-accent"
-            style={{ transitionDelay: `${i * 45}ms` }}
-          >
-            <span className="label tnum text-muted">M{pad(i + 1)}</span>
-            <span className="truncate text-[13px] font-medium uppercase tracking-wide">{m}</span>
-          </li>
-        ))}
-      </ol>
-      <div className="mt-5 flex items-end justify-between border-t border-line pt-4">
-        <span className="label max-w-[22ch] text-muted">Every trip, litre and toll rolls up into one number:</span>
-        <span className="display text-[clamp(34px,3.6vw,64px)] leading-[0.8] text-accent">P/L</span>
-      </div>
-    </Frame>
-  );
-}
-
-/* ── 03 · Secret Leak Detector — the commit gate ─────────────────────── */
+/* ── 02 · Secret Leak Detector — the commit gate ─────────────────────── */
 
 export function CommitGate({ className }: { className?: string }) {
   return (
@@ -155,7 +128,7 @@ export function CommitGate({ className }: { className?: string }) {
   );
 }
 
-/* ── 04 · CERTUS-S2 — the trust figure ───────────────────────────────── */
+/* ── 03 · CERTUS-S2 — the trust figure ───────────────────────────────── */
 
 function cellsPath(cells: Array<[number, number]>, size: number) {
   return cells.map(([x, y]) => `M${x * size} ${y * size}h${size}v${size}h${-size}z`).join("");

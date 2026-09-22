@@ -1,17 +1,19 @@
 "use client";
 
 import { useRef } from "react";
-import { now } from "@/content/site";
+import { now, sections, site } from "@/content/site";
 import { gsap, useGSAP, MOTION_OK } from "@/lib/gsap";
 import { pad } from "@/lib/cn";
 import { SectionHead } from "./ui/SectionHead";
 
 /**
- * 07 — Currently. The pit board: what's on the bench right now. The page
- * goes full signal-red, and each line flips into place like a split-flap.
+ * 11 — Currently. The pit board: what's on the bench right now, what's
+ * being learned, and what's next (intentions, not achievements). The page
+ * goes full signal-red and each line flips into place like a split-flap.
  */
 export function CurrentlyBuilding() {
   const root = useRef<HTMLElement>(null);
+  const s = sections.now;
 
   useGSAP(
     () => {
@@ -38,18 +40,24 @@ export function CurrentlyBuilding() {
   );
 
   const rows = now.building.map((b, i) => ({ k: pad(i + 1), v: b }));
+  const side = [
+    { k: "Currently learning", v: now.learning },
+    { k: "Currently exploring", v: now.exploring },
+    { k: "Currently testing", v: now.testing },
+    { k: "Currently thinking about", v: now.thinkingAbout },
+  ].filter((r): r is { k: string; v: string } => Boolean(r.v));
 
   return (
     <section
       ref={root}
-      id="now"
+      id={s.id}
       data-theme="ir"
-      data-index="07"
-      data-label="Currently"
+      data-index={s.index}
+      data-label={s.label}
       aria-labelledby="now-title"
       className="relative px-gutter pb-[14vh] pt-[16vh]"
     >
-      <SectionHead index="07" title="Currently" aside={`Board updated — ${now.updated}`} />
+      <SectionHead index={s.index} title={now.title} aside={`Board updated — ${site.updated}`} />
 
       <div data-board className="mt-10">
         <h2 id="now-title" className="label flex items-center gap-3">
@@ -69,11 +77,8 @@ export function CurrentlyBuilding() {
           ))}
         </ol>
 
-        <div className="mt-12 grid gap-8 md:grid-cols-2 md:gap-6">
-          {[
-            { k: "Currently learning", v: now.learning },
-            { k: "Currently exploring", v: now.exploring },
-          ].map((row) => (
+        <div className={`mt-12 grid gap-8 md:gap-6 ${side.length > 2 ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-2"}`}>
+          {side.map((row) => (
             <div key={row.k} className="relative border-t-2 border-fg pt-4">
               <p className="label">{row.k}</p>
               <p data-flap={row.v} className="display mt-3 text-[clamp(40px,5.4vw,104px)] leading-[0.86]">
@@ -82,6 +87,22 @@ export function CurrentlyBuilding() {
             </div>
           ))}
         </div>
+
+        <div className="mt-14 grid gap-4 border-t border-fg/30 pt-5 md:grid-cols-12 md:gap-6">
+          <p className="label md:col-span-3">
+            Next <span className="text-fg/60">— intentions, not achievements</span>
+          </p>
+          <p className="display text-[clamp(26px,3vw,52px)] leading-[0.95] md:col-span-9">
+            {now.next.map((n, i) => (
+              <span key={n}>
+                {n}
+                {i < now.next.length - 1 ? <span className="text-fg/40"> · </span> : null}
+              </span>
+            ))}
+          </p>
+        </div>
+
+        <p className="label mt-10 text-fg/70">{now.label}</p>
       </div>
     </section>
   );

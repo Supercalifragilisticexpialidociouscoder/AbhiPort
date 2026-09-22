@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef } from "react";
-import { hero, site } from "@/content/site";
+import { hero, sections, site } from "@/content/site";
+import { onBootReveal } from "@/lib/boot";
 import { gsap, ScrollTrigger, useGSAP, MOTION_OK, REDUCED } from "@/lib/gsap";
 
 function Chars({ text }: { text: string }) {
@@ -27,8 +28,20 @@ const LINE = 0.8; // line-height of .hero-name
  * the font size is capped by the height available, then the letterforms
  * stretch until ABHIRAM spans edge to edge. On scroll the two lines slide
  * apart and the portrait frame (tucked beside REDDY) opens to full-bleed.
+ *
+ * A cut-out portrait (transparent background) stands on the stage instead:
+ * bottom-anchored, never cropped, and the opening crop centres on its face.
  */
-export function Hero({ portrait }: { portrait: React.ReactNode }) {
+export function Hero({
+  portrait,
+  cutout = false,
+  focus = [50, 50],
+}: {
+  portrait: React.ReactNode;
+  cutout?: boolean;
+  /** Where the face sits in a cut-out, as [x%, y%] of the image. */
+  focus?: [number, number];
+}) {
   const root = useRef<HTMLElement>(null);
 
   useGSAP(
@@ -42,8 +55,24 @@ export function Hero({ portrait }: { portrait: React.ReactNode }) {
       const meta = q("[data-area='meta']")[0] as HTMLElement;
       const slot = q("[data-slot]")[0] as HTMLElement;
       const frame = q("[data-frame]")[0] as HTMLElement;
+      const inner = q("[data-frame-inner]")[0] as HTMLElement;
+      const figure = q("[data-figure]")[0] as HTMLElement | undefined;
       const l1 = q("[data-line='1']")[0] as HTMLElement;
       const l2 = q("[data-line='2']")[0] as HTMLElement;
+
+      // What the opening crop centres on: the face of a cut-out, otherwise the
+      // middle of the frame. Layout offsets rather than rects, so the frame's
+      // own transforms never feed back into the measurement.
+      const focusPoint = () =>
+        figure
+          ? { x: figure.offsetLeft + (figure.offsetWidth * focus[0]) / 100, y: figure.offsetTop + (figure.offsetHeight * focus[1]) / 100 }
+          : { x: pin.clientWidth / 2, y: pin.clientHeight / 2 };
+      const shift = () => {
+        const p = pin.getBoundingClientRect();
+        const s = slot.getBoundingClientRect();
+        const f = focusPoint();
+        return { x: s.left - p.left + s.width / 2 - f.x, y: s.top - p.top + s.height / 2 - f.y };
+      };
 
       /* ── Fit the name ─────────────────────────────────────────────── */
       const setName = (size: number, wdth: number) => {
@@ -75,8 +104,14 @@ export function Hero({ portrait }: { portrait: React.ReactNode }) {
         }
         setName(size, lo);
       };
-      fit();
-      ScrollTrigger.addEventListener("refreshInit", fit);
+      // The intro zoom settles onto the face, not onto the middle of the frame.
+      const layout = () => {
+        fit();
+        const f = focusPoint();
+        gsap.set(inner, { transformOrigin: `${f.x}px ${f.y}px` });
+      };
+      layout();
+      ScrollTrigger.addEventListener("refreshInit", layout);
 
       const slotInset = () => {
         const p = pin.getBoundingClientRect();
@@ -85,14 +120,13 @@ export function Hero({ portrait }: { portrait: React.ReactNode }) {
       };
 
       const mm = gsap.matchMedia();
+      let playIntro: (() => void) | null = null;
 
       /* ── Reduced motion: everything in place, nothing moves ───────── */
       mm.add(REDUCED, () => {
         const place = () => {
-          const p = pin.getBoundingClientRect();
-          const s = slot.getBoundingClientRect();
           gsap.set(frame, { clipPath: slotInset() });
-          gsap.set(q("[data-frame-shift]"), { x: s.left + s.width / 2 - (p.left + p.width / 2), y: s.top + s.height / 2 - (p.top + p.height / 2) });
+          gsap.set(q("[data-frame-shift]"), shift());
         };
         place();
         const st = ScrollTrigger.create({ trigger: pin, onRefresh: place });
@@ -119,11 +153,6 @@ export function Hero({ portrait }: { portrait: React.ReactNode }) {
         });
         // The media starts centred on the slot (a tight crop) and drifts back
         // to centre as the frame opens — same ease, so it never under-fills.
-        const shift = () => {
-          const p = pin.getBoundingClientRect();
-          const s = slot.getBoundingClientRect();
-          return { x: s.left + s.width / 2 - (p.left + p.width / 2), y: s.top + s.height / 2 - (p.top + p.height / 2) };
-        };
         tl.fromTo(frame, { clipPath: () => slotInset() }, { clipPath: "inset(0px 0px 0px 0px)", ease: "power2.inOut", duration: 1 }, 0)
           .fromTo(q("[data-frame-shift]"), { x: () => shift().x, y: () => shift().y }, { x: 0, y: 0, ease: "power2.inOut", duration: 1 }, 0)
           .fromTo(l1, { xPercent: 0, x: 0 }, { xPercent: -32, duration: 1 }, 0)
@@ -134,10 +163,8 @@ export function Hero({ portrait }: { portrait: React.ReactNode }) {
           .fromTo(q("[data-caption-line]"), { yPercent: 110, y: 0 }, { yPercent: 0, duration: 0.3, stagger: 0.07, ease: "power3.out" }, 0.62)
           .fromTo(q("[data-caption-note]"), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.25 }, 0.85);
 
-        // Load: ~1.3s of controlled motion, then out of the way.
-        const intro = contextSafe!(() => {
-          fit();
-          ScrollTrigger.refresh();
+        // Arrival: ~1.3s of controlled motion, then out of the way.
+        playIntro = contextSafe!(() => {
           gsap
             .timeline({ defaults: { ease: "expo.out" } })
             .fromTo(q("[data-line='1'] [data-char]"), { yPercent: 105, y: 0 }, { yPercent: 0, duration: 1.15, stagger: 0.045 }, 0)
@@ -146,14 +173,35 @@ export function Hero({ portrait }: { portrait: React.ReactNode }) {
             .fromTo(q("[data-frame-inner]"), { scale: 1.35 }, { scale: 1, duration: 1.8 }, 0.3)
             .fromTo(q("[data-intro]"), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.9, stagger: 0.05 }, 0.55);
         });
-        const fontsReady = Promise.race([document.fonts?.ready ?? Promise.resolve(), new Promise((r) => setTimeout(r, 1200))]);
-        fontsReady.then(intro);
 
-        return () => tl.kill();
+        return () => {
+          tl.kill();
+          playIntro = null;
+        };
       });
 
+      // Once the type has loaded, fit the name for real and tell the preloader
+      // the first screen is laid out. The intro plays as the preloader opens,
+      // or straight away when there isn't one.
+      let disposed = false;
+      let cancelIntro = () => {};
+      const fontsReady = Promise.race([document.fonts?.ready ?? Promise.resolve(), new Promise((r) => setTimeout(r, 1200))]);
+      fontsReady.then(
+        contextSafe!(() => {
+          if (disposed) return;
+          layout();
+          ScrollTrigger.refresh();
+          document.documentElement.dataset.heroReady = "";
+          window.dispatchEvent(new Event("hero:ready"));
+          cancelIntro = onBootReveal(() => playIntro?.());
+        }),
+      );
+
       return () => {
-        ScrollTrigger.removeEventListener("refreshInit", fit);
+        disposed = true;
+        cancelIntro();
+        delete document.documentElement.dataset.heroReady;
+        ScrollTrigger.removeEventListener("refreshInit", layout);
       };
     },
     { scope: root },
@@ -165,8 +213,8 @@ export function Hero({ portrait }: { portrait: React.ReactNode }) {
       id="top"
       className="hero relative"
       data-theme="ink"
-      data-index="00"
-      data-label="Start"
+      data-index={sections.hero.index}
+      data-label={sections.hero.label}
       aria-labelledby="hero-title"
     >
       <h1 id="hero-title" className="sr-only">
@@ -178,7 +226,16 @@ export function Hero({ portrait }: { portrait: React.ReactNode }) {
         <div data-frame className="pointer-events-none absolute inset-0 z-0">
           <div data-frame-shift className="absolute inset-0 will-change-transform">
             <div data-frame-inner className="absolute inset-0 will-change-transform">
-              {portrait}
+              {cutout ? (
+                <div className="absolute inset-0 flex items-end justify-center">
+                  <div data-figure className="hero-figure relative shrink-0">
+                    <span aria-hidden className="hero-figure-glow absolute" />
+                    {portrait}
+                  </div>
+                </div>
+              ) : (
+                portrait
+              )}
             </div>
           </div>
           <div
@@ -221,11 +278,11 @@ export function Hero({ portrait }: { portrait: React.ReactNode }) {
             </span>
           </div>
 
-          <div data-area="meta" data-fade className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line pt-3 md:mt-4 md:grid-cols-4">
+          <div data-area="meta" data-fade className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line pt-3 md:mt-4 md:grid-cols-5">
             {hero.meta.map((m) => (
               <div key={m.k} data-intro className="label">
                 <span className="block text-muted">{m.k}</span>
-                <span className="block normal-case tracking-normal text-[13px] text-fg">{m.v}</span>
+                <span className={`block normal-case tracking-normal text-[13px] ${m.accent ? "text-accent" : "text-fg"}`}>{m.v}</span>
               </div>
             ))}
             <div data-intro className="label flex items-end justify-between gap-3 md:justify-end">

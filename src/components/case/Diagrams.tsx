@@ -1,5 +1,5 @@
 import type { Layer, Step } from "@/content/projects";
-import { pad } from "@/lib/cn";
+import { cn, pad } from "@/lib/cn";
 
 /** A left-to-right chain of steps (vertical on small screens). */
 export function FlowChain({ title, steps }: { title: string; steps: Step[] }) {
@@ -27,40 +27,52 @@ export function FlowChain({ title, steps }: { title: string; steps: Step[] }) {
   );
 }
 
-/** System architecture as stacked layers — the page is in garage mode here. */
+/** System architecture as layers. Up to four sit in one row; more wrap into a 3-up grid. */
 export function ArchitectureDiagram({ caption, layers }: { caption: string; layers: Layer[] }) {
+  const wide = layers.length > 4;
   return (
     <figure>
-      <ol className="grid gap-3 lg:grid-flow-col lg:auto-cols-fr lg:gap-0">
-        {layers.map((l, i) => (
-          <li key={l.tier} className="relative border border-line bg-bg/70 p-5 lg:-ml-px lg:min-h-[320px] lg:first:ml-0">
-            <p className="label flex justify-between">
-              <span className="text-accent">
+      <ol className={cn("grid gap-px border border-line bg-line sm:grid-cols-2", wide ? "lg:grid-cols-3" : "lg:grid-flow-col lg:auto-cols-fr lg:grid-cols-none")}>
+        {layers.map((l, i) => {
+          const last = i === layers.length - 1;
+          const rowEnd = wide ? i % 3 === 2 : last;
+          return (
+            <li key={l.tier} className="relative min-w-0 bg-bg p-5 lg:min-h-[300px]">
+              <p className="label text-accent">
                 L{pad(i + 1)} · {l.tier}
-              </span>
-            </p>
-            <p className="display mt-8 text-[clamp(28px,2.3vw,40px)] leading-[0.9]">{l.name}</p>
-            {l.items.length ? (
-              <ul className="mt-4 flex flex-wrap gap-1.5">
-                {l.items.map((it) => (
-                  <li key={it} className="label border border-line px-2 py-1 normal-case tracking-normal text-[12px]">
-                    {it}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            <p className="mt-5 text-[15px] leading-snug text-muted">{l.note}</p>
-            {i < layers.length - 1 ? (
-              <span
-                aria-hidden
-                className="absolute -bottom-[15px] left-1/2 z-10 grid h-7 w-7 -translate-x-1/2 place-items-center rounded-full border border-line bg-bg text-[13px] text-accent lg:-right-[15px] lg:bottom-auto lg:left-auto lg:top-1/2 lg:-translate-y-1/2 lg:translate-x-0"
-              >
-                <span className="lg:hidden">↓</span>
-                <span className="hidden lg:inline">→</span>
-              </span>
-            ) : null}
-          </li>
-        ))}
+              </p>
+              <p className="display mt-8 text-[clamp(26px,2vw,36px)] leading-[0.92] [overflow-wrap:anywhere]">{l.name}</p>
+              {l.items.length ? (
+                <ul className="mt-4 flex flex-wrap gap-1.5">
+                  {l.items.map((it) => (
+                    <li key={it} className="label border border-line px-2 py-1 normal-case tracking-normal text-[12px]">
+                      {it}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <p className="mt-5 text-[15px] leading-snug text-muted">{l.note}</p>
+              {!last ? (
+                <span
+                  aria-hidden
+                  className={cn(
+                    "absolute -bottom-[14px] left-1/2 z-10 grid h-7 w-7 -translate-x-1/2 place-items-center rounded-full border border-line bg-bg text-[13px] text-accent sm:hidden",
+                  )}
+                >
+                  ↓
+                </span>
+              ) : null}
+              {!rowEnd ? (
+                <span
+                  aria-hidden
+                  className="absolute -right-[14px] top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 place-items-center rounded-full border border-line bg-bg text-[13px] text-accent lg:grid"
+                >
+                  →
+                </span>
+              ) : null}
+            </li>
+          );
+        })}
       </ol>
       <figcaption className="label mt-4 flex justify-between gap-4 text-muted">
         <span>Fig. — {caption}</span>

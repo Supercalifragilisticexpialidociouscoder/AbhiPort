@@ -94,6 +94,24 @@ export function PartGlyph({ name, label, className }: { name: GlyphName; label?:
           {pins(24, 49.5, 3, 7, 0)}
         </svg>
       );
+    case "led":
+      return (
+        <svg {...common}>
+          <path d="M20 22l16 10-16 10z" />
+          <path d="M36 22v20M8 32h12M36 32h16" />
+          <path d="M40 18l6-6M44 22l6-6" />
+          <path d="M43 12h3v3M47 16h3v3" />
+        </svg>
+      );
+    case "buzzer":
+      return (
+        <svg {...common}>
+          <circle cx="26" cy="32" r="14" />
+          <circle cx="26" cy="32" r="4" />
+          <path d="M46 22c4 6 4 14 0 20M52 17c7 9 7 21 0 30" strokeDasharray="2 2" />
+          {pins(22, 47.5, 2, 6, 0)}
+        </svg>
+      );
     case "mono":
     default:
       return (
