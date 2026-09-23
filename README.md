@@ -7,6 +7,24 @@ It's not a portfolio template. It's a body of work in progress, built so that tw
 - **A recruiter who has 15 seconds.** Name, age and the strongest evidence, above the fold and in *The short version*.
 - **An engineer who has 10 minutes.** Case studies, an "Under the hood" panel on every flagship, the build log and a filterable archive.
 
+**The Work film** (section 04) is the spine of the home page: eight projects, eight scenes, one pinned viewport. Each scene carries a *world* — a diagram built from what that project actually does, in `src/components/work/worlds/`, keyed by slug and reused as the project page's own visual. Scrolling cuts between scenes (hold → wipe → hold), the strip along the bottom and the ← → keys jump between them, and a line mid-cut names what one project has to do with the next. Below 1024px, or under reduced motion, the same eight scenes simply stack and stay still.
+
+Changing the eight, or their order, is two fields in `projects.ts` — `featured` and `featureRank`. A project without a world still works; it just shows its signature diagram instead.
+
+The home page is the front door; behind it are the rooms — each one a page of its own:
+
+| Room | What's there |
+| --- | --- |
+| `/archive` | Every project, filterable and searchable. Deep-linkable: `/archive?cat=security&q=python` |
+| `/work/[slug]` | A full case study (`study`) or a lighter project file (`file`) for every project with a page |
+| `/lab`, `/lab/[slug]` | The Garage's rooms: the motorcycle safety prototype and nine bench experiments, each with its own simulated instrument |
+| `/club-infin8` | The Club Infin8 story |
+| `/community` | Hackathons (and the 2× SIH story, told once), events, workshops, learning, photographs |
+| `/credentials` | Certificates and awards — title, issuer, date, type, verify / original only where they exist |
+| `/experience` | Roles, then a timeline of builds dated by their first commit |
+
+The nav's top-right **race time** is real: how long you've been on the site this visit. The head script stamps the start before first paint (sessionStorage — it survives reloads, resets on a fresh visit), and one requestAnimationFrame loop writes it straight to the DOM.
+
 ```bash
 npm install
 npm run dev        # http://localhost:3000
@@ -20,20 +38,24 @@ Stack: Next.js 16 (App Router, Turbopack), TypeScript, Tailwind CSS 4, GSAP + Sc
 
 ## 1. Editing words
 
-Everything written on the site lives in two files.
+Everything written on the site lives in four files.
 
 | File | What's in it |
 | --- | --- |
-| `src/content/site.ts` | Identity, links and CV, section numbering (`sections`), hero, *The short version*, *Who's Abhi*, Club Infin8 (`club`), community & certificates, hackathons (`races`), the hardware lab (`garage`, incl. the bench prototype), *How I build*, the build log, *Currently* / *Next*, *Off-track*, contact and the final screen |
-| `src/content/projects.ts` | **Every project in one list.** `featured: true` puts it on the home-page track. Every entry appears in the archive. Entries with a `study` get a full case study at `/work/[slug]` |
+| `src/content/site.ts` | Identity, links and CV, section numbering (`sections`), the Index map (`indexLinks`), hero, Quick look, *The short version*, *Who's Abhi*, the Work intro, Club Infin8 (`club`), hackathons (`races`), the Garage (`garage`), *How I build* (the loop, and the stack told through projects), the build log, the archive door, *Currently* / *Next*, *Off-track*, contact and the final screen |
+| `src/content/projects.ts` | **Every project in one list.** `featured: true` + `featureRank: 1–8` puts it in the home page's Work film, in that order. Every entry appears in `/archive`. A `study` gets a full case study at `/work/[slug]`; a `file` gets a lighter project page there |
+| `src/content/lab.ts` | The lab: one prototype and the experiments. Explanations of how a part works are general; `known` is only what's confirmed about the actual build |
+| `src/content/community.ts` | `/community` (the SIH story, hackathons, events, workshops, learning), `/credentials` and `/experience` (roles) |
 
-**Adding a project** means adding one object to `projects`. Give it `categories` (the archive filters only show categories that have entries) and a `status`, which is one of `Shipped · Active · Prototype · Research · Experiment · Hackathon · Archived`. The archive, filters, counts, sitemap and OG images all update themselves.
+Project data comes from Abhi's own words plus his **public** GitHub repositories — READMEs and code, never invented. Private repositories are never listed.
+
+**Adding a project** means adding one object to `projects`. Give it `categories` (the archive filters only show categories that have entries) and a `status`, which is one of `Shipped · Active · Prototype · Research · Experiment · Hackathon · Learning · Archived`. The archive, filters, counts, sitemap and OG images all update themselves.
 
 **Adding real numbers:** each project takes an optional `metrics: [{ value, label }]`, which renders as a strip on its case study. Only use real numbers.
 
 **Club Infin8 figures** (`club.stats` in `site.ts`) are editable. `prefix: "~"` marks approximate numbers.
 
-**Software in real use — private by default.** Some of Abhi's applications are in daily use by real business owners. The site says exactly that and nothing more: no business names, industries, screenshots, data or internals. It appears in `hero`, `shortVersion.inUse` and `shortVersion.pillars` (the recruiter answer), `work.inUse` (the *From code to use* beat before the flagships, anchored at `/#in-use`), `archive.offList` (why the archive doesn't list them) and `finale.takeaway`. If a business ever agrees to be named, give it a normal entry in `projects.ts`.
+**Software in real use — private by default.** Some of Abhi's applications are in daily use by real business owners. The site says exactly that and nothing more: no business names, industries, screenshots, data or internals. It appears in `hero`, `shortVersion.inUse` and `shortVersion.pillars` (the recruiter answer), `work.inUse` (the one classified row in the build index), `quickLook.inUse`, `archive.offList` (why the archive doesn't list them) and `finale.takeaway`. If a business ever agrees to be named, give it a normal entry in `projects.ts`.
 
 ### Placeholders: nothing unverified gets published
 
@@ -43,7 +65,13 @@ Things still waiting on real answers:
 
 - `site.buildingSince`
 - Per project: `year`, `role`, `links` (live / code / video), `study.next` (what you'd improve), plus each `resultTodo` and `qualityTodo`
-- Secret Leak Detector, SIH1775 and AstroNexis: the actual stack and approach (`stackTodo`)
+- PlasmaTherm Technologies: everything except the name and Abhi's role — the page is deliberately thin until the company publishes
+- Sandgate: what it is, the stack, and whether there's a repo to link
+- AstroSim: what it simulates and the stack (`stackTodo`)
+- `/community`: dates, results and notes for each event (`hackathons`, `events`, `workshops` in `community.ts`), and which SIH statements won
+- `/credentials`: dates, types, credential IDs and verification links — never invented
+- `/experience`: dates for each role (`roles[*].when`)
+- The lab (`lab.ts`): photos, wiring, code and test notes for each build (`todo`)
 - `races.entries`: dates, TechFusion details and notes. Which problem statement won which round is optional, and stays off until you add it.
 - `buildLog.sectors[*].year`
 - `howIBuild.examples` → *This website* → Deployment (once it's live)
@@ -56,18 +84,29 @@ Images are referenced by **base path without an extension**. Drop a file into `/
 
 | Drop this file | Where it shows | Shape |
 | --- | --- | --- |
-| `public/cv/abhiram-reddy-cv.pdf` | Switches on every "Download CV" link: nav, short version, contact, footer | PDF |
-| `public/images/abhi-hero.webp` *(in place)* | Hero. A cut-out on transparency stands bottom-centre on the dark stage; the opening crop beside REDDY centres on the face (`hero.focus`). For a regular full-bleed photo or `.mp4`, set `hero.cutout = false` | Transparent PNG/WebP, about 9:10 |
+| `public/cv/abhiram-reddy-cv.pdf` | Switches on every "Download CV" link: Index, Quick look, short version, contact, footer | PDF |
+| `public/images/abhi-hero.webp` *(in place)* | Hero. A cut-out on transparency stands bottom-centre on the dark stage, in front of the ABHI word; the Index preview reuses it. For a regular full-bleed photo or `.mp4`, set `hero.cutout = false` | Transparent PNG/WebP, about 9:10 |
 | `public/images/abhi-portrait.jpg` | *Who's Abhi?* | 4:5 |
-| `public/images/work/{infin8,sld,certus}-cover.jpg` | Featured spreads and case-study covers | Landscape |
-| `public/images/work/{infin8,sld,certus}-0{1,2,3}.jpg` | Case-study screens and figures | `-01` is 16:9; the others 4:3 |
+| `public/images/work/{infin8,sld,certus}-cover.jpg` | Case-study covers | Landscape |
+| `public/images/work/{infin8,sld,certus,calendar}-0{1,2,3}.jpg` | Case-study screens and figures | `-01` is 16:9; the others 4:3 |
+| `public/images/work/{socialguard,grit,terramatch,hakit,career,wellness,erp,expense,idpdf}-0{1,2}.jpg` | Project-file screens (the first one is also the page's cover) | 16:9, then 4:3 |
+| `public/images/lab/*.jpg` | Lab evidence — each entry in `lab.ts` lists its `media` paths | 16:9 / 4:3 |
+| `public/images/community/*.jpg` | Event and hackathon photographs — each entry lists its `photo` path | 4:3 |
+| `public/images/credentials/*.jpg` | Certificate scans | 4:3 |
+| `public/certificates/*.pdf` | "Original (PDF)" links on `/credentials` — only shown once the file exists | PDF |
 | `public/images/club/infin8-cover.jpg` | Club Infin8 page cover | Landscape |
 | `public/images/club/infin8-0{1,2,3}.jpg` | Club Infin8 "In pictures" | 4:5 |
 | `public/images/beyond/{video,3d,hardware,design,events,community,motorcycles,creative}.jpg` | *Off-track* film strip | 3:2 |
 
-Until a cover exists, each flagship shows a **signature diagram** built from real facts about the project: the approval chain, the commit gate, and the trust figure. They're labelled as illustrations, never passed off as screenshots.
+Each project with a `visual` has a **signature diagram** built from real facts about it: the approval chain, the commit gate, the trust figure, a labelled post feed, a readiness calendar, a mentor panel, risk-queue corridors and a room scan. They're labelled as illustrations, never passed off as screenshots.
 
-## 3. SEO & deploy
+## 3. Space Mode
+
+Press <kbd>S</kbd> on a desktop and a small craft drops into the page. Arrows or WASD fly it — thrust, brake, steer, with real inertia — `ENTER` at a waypoint goes there, and `ESC` puts it away exactly where you left off. The waypoints are the page's own sections (the HUD points at the nearest one when none is in range), and flying past the top or bottom scrolls the document, so the film keeps cutting underneath you.
+
+It is an easter egg, so the site never advertises it: the only hint is an unlabelled `S ?` in the Index panel, and one line on `/work/abhiport`. It costs a single keydown listener until someone presses the key — the engine (`src/components/space/SpaceMode.tsx`) is imported on demand, and never at all on a phone or any coarse pointer. Under `prefers-reduced-motion` it still opens, but flies calmer: no trail, lower top speed, no coasting.
+
+## 4. SEO & deploy
 
 Set the production URL so canonical links, the sitemap and OG tags are absolute:
 
@@ -83,27 +122,33 @@ On Vercel this falls back to `VERCEL_PROJECT_PRODUCTION_URL` automatically. Buil
 - the web manifest and icons
 - JSON-LD `Person` data: award, organisation and profiles
 
-## 4. How it's built
+## 5. How it's built
 
 ```
 src/
-  app/                    layout (fonts, metadata, boot decision), home, /work/[slug], /club-infin8, 404, OG/icons/robots/sitemap
+  app/                    layout (fonts, metadata, boot decision, race clock), home, /archive, /work/[slug], /lab, /lab/[slug], /club-infin8, /community, /credentials, /experience, 404, OG/icons/robots/sitemap
   content/                site.ts · projects.ts   ← edit these
   components/
     Preloader.tsx         the 000 → 100 boot sequence (see below)
-    Navigation.tsx        wordmark · live chapter indicator · six chapters · CV · full-screen mobile menu
-    Hero.tsx              name fitted to the viewport with Archivo's width axis; the cut-out portrait's frame opens on scroll
+    Navigation.tsx        wordmark · chapter, phase (Build / Break / Rebuild) and progress · Quick look · the Index (every chapter with a preview)
+    QuickLook.tsx         the 30-second version in a drawer: role, facts, flagships, stack, CV and links (Q)
+    Hero.tsx              the elastic ABHI word behind the cut-out portrait; the word parts like curtains on scroll
     ShortVersion.tsx      the recruiter layer: 18 · 2× SIH · Club Infin8 scale · software in daily use · six pillars · every link
     About.tsx             Who's Abhi?
     Statement.tsx         "This is a ~~portfolio~~ work in progress."
-    Projects.tsx          From code to use, then the flagships — pinned horizontal track (desktop), swipeable cards (mobile)
-    ProjectCard.tsx       one flagship spread
-    Community.tsx         Club Infin8: scale, the 8-club ecosystem (the 8 turns into ∞), people × systems, learning
-    Hackathons.tsx        Race weekends: the credential, the lap, SIH problem statements, timing sheet
-    Lab.tsx               The Garage: IMU trace, parts bin, bench prototype with the lean-angle dial
-    HowIBuild.tsx         the shared skeleton with real choices, principles, the grouped stack
+    work/WorkFilm.tsx     the film: eight scenes, one pinned viewport, cut by scroll (desktop); the same eight stacked (mobile, reduced motion)
+    work/worlds/          one world per featured project — the diagram each scene runs, reused on its project page
+    Community.tsx         Club Infin8: scale, the 8-club ecosystem (the 8 turns into ∞), people × systems — then the door to /community
+    Hackathons.tsx        Race weekends: the race clock, the lap, SIH problem statements, timing sheet — then the door to /community
+    Lab.tsx               The Garage: IMU trace, parts bin, and the lab index — a door to every build
+    HowIBuild.tsx         the shared skeleton with real choices, the loop, principles, and the stack told through projects
     Timeline.tsx          Build log
-    Archive.tsx           every project, filterable, with status chips and expandable rows
+    Archive.tsx           the door to /archive: a ticker of everything filed, counts, the way in
+    space/                Space Mode — one listener, and an engine that only loads if S is pressed
+    archive/              ArchiveIndex — filters, search, sort, expandable rows, record card
+    lab/                  LabIndex, LabHero, LabPage (the prototype's long-form build, experiments), LabVisuals (ten instruments)
+    room/                 RoomHero — the opening of every room
+    ProjectFile.tsx       the lighter project page: what it is, how it works, what's inside, the honest bit
     CurrentlyBuilding.tsx the signal-red board + Next
     BeyondCode.tsx        Off-track film strip
     Contact.tsx · Footer.tsx (the STILL BUILDING final screen)
@@ -111,7 +156,7 @@ src/
     ClubCaseStudy.tsx     the Club Infin8 story
     case/                 CaseHero, CaseSection, UnderTheHood (tabbed engine bay), diagrams
     visuals/              project signatures, Ecosystem, LeanDial, ImuScope, PartGlyph
-    ui/                   Media, Ph ([ADD …]), StatusChip, CountUp, Reveal, Magnetic, SectionHead, Clock
+    ui/                   Media, Ph ([ADD …]), StatusChip, CountUp, Reveal, Magnetic, SectionHead, Clock, ElasticWord (letters widen under the pointer)
     Cursor.tsx · PageTransition.tsx · SmoothScroll.tsx · ScrollDirector.tsx
 ```
 
@@ -128,8 +173,8 @@ Everything animates transforms, opacity or clip-path. Continuous effects (the IM
 **The boot sequence.** `Preloader.tsx` is the site's opening title, not a separate screen:
 
 - **What it waits for.** Only what the first screen needs: the type (`document.fonts`), any media marked critical (every `Media` with `eager`, meaning the hero portrait) and the hero's fitted layout (`hero:ready`). Nothing below the fold. The live checklist (*Type · Media · Layout*) shows exactly that.
-- **How it counts.** 000 → 100 in about 0.9s once everything is ready, stretching along Archivo's width axis as it fills. Without the essentials it can lead but can't finish; on a slow connection it keeps creeping instead of freezing, and after 6s it stops waiting and goes. A timer guarantees the page arrives even if animation frames stall (a background tab), and a failsafe in the head script lets the page through if the preloader never starts at all.
-- **The exit.** The number snaps back to condensed and folds into the red seam line, the screen splits open along it, and the hero's intro, the nav and then the custom cursor follow. Anything that animates on arrival waits for `boot:reveal` (`src/lib/boot.ts`); scrolling and the cursor wait for `boot:done`.
+- **How it counts.** 000 → 100 in about a second once everything is ready, stretching along Archivo's width axis as it fills. The number leans into its own speed and kicks through three gear shifts (25, 50, 75) while tach ticks climb the seam; from about 86 it shakes against the limiter and the redline ticks blink. Without the essentials it can lead but can't finish; on a slow connection it keeps creeping instead of freezing, and after 6s it stops waiting and goes. A timer guarantees the page arrives even if animation frames stall (a background tab), and a failsafe in the head script lets the page through if the preloader never starts at all.
+- **The exit.** Impact: at 100 the last zero turns signal red, heat blooms behind it, the redline flashes and the frame shakes. Then the dive: the camera plunges through that zero, its counter opens into a window onto the page, and the hero scene rushes up from the exact point you're diving into as the letters burst in. The nav and then the custom cursor follow. Anything that animates on arrival waits for `boot:reveal` (`src/lib/boot.ts`); scrolling and the cursor wait for `boot:done`.
 - **Who sees what.** The head script in `layout.tsx` decides before first paint. First visit: the full sequence. Returning visitor in a new session: a short one (about 0.55s of counting). Reduced motion: numbers only, then a fade. A reload in the same session: nothing. Click, tap, Enter, Space or Esc hurries it, but it still waits for the essentials.
 
 **Accessibility.**
@@ -138,7 +183,7 @@ Everything animates transforms, opacity or clip-path. Continuous effects (the IM
 - Real buttons and links throughout, with visible focus.
 - Keyboard focus drives the horizontal track.
 - Proper tab patterns in the parts bin and Under the hood.
-- A focus-trapped menu dialog.
+- Focus-trapped Index and Quick look dialogs (Esc closes, focus returns), with single-key shortcuts: I and Q.
 - Screen-reader text for every animated headline.
 - `prefers-reduced-motion` turns the boot sequence into a plain count and removes pinning, smoothing and scrubbing. Sections stack.
 - The custom cursor only appears for fine pointers.
