@@ -2,14 +2,15 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Footer } from "@/components/Footer";
 import { ProjectCaseStudy } from "@/components/ProjectCaseStudy";
-import { caseStudies, getProject } from "@/content/projects";
+import { ProjectFile } from "@/components/ProjectFile";
+import { getProject, projectPages } from "@/content/projects";
 import { site } from "@/content/site";
 import { publicFile } from "@/lib/assets";
 
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return caseStudies.map((p) => ({ slug: p.slug }));
+  return projectPages.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/work/[slug]">): Promise<Metadata> {
@@ -31,14 +32,26 @@ export async function generateMetadata({ params }: PageProps<"/work/[slug]">): P
   };
 }
 
-export default async function CaseStudyPage({ params }: PageProps<"/work/[slug]">) {
+export default async function ProjectPage({ params }: PageProps<"/work/[slug]">) {
   const { slug } = await params;
   const project = getProject(slug);
-  if (!project?.study) notFound();
-  return (
-    <>
-      <ProjectCaseStudy project={{ ...project, study: project.study }} />
-      <Footer cvHref={publicFile(site.cv)} />
-    </>
-  );
+  if (!project) notFound();
+  const cv = publicFile(site.cv);
+  if (project.study) {
+    return (
+      <>
+        <ProjectCaseStudy project={{ ...project, study: project.study }} />
+        <Footer cvHref={cv} />
+      </>
+    );
+  }
+  if (project.file) {
+    return (
+      <>
+        <ProjectFile project={{ ...project, file: project.file }} />
+        <Footer cvHref={cv} />
+      </>
+    );
+  }
+  notFound();
 }

@@ -9,13 +9,12 @@ import { Hackathons } from "@/components/Hackathons";
 import { Hero } from "@/components/Hero";
 import { HowIBuild } from "@/components/HowIBuild";
 import { Lab } from "@/components/Lab";
-import { Projects } from "@/components/Projects";
 import { ScrollDirector } from "@/components/ScrollDirector";
 import { ShortVersion } from "@/components/ShortVersion";
 import { Statement } from "@/components/Statement";
 import { Timeline } from "@/components/Timeline";
+import { WorkFilm } from "@/components/work/WorkFilm";
 import { Media } from "@/components/ui/Media";
-import { featuredProjects } from "@/content/projects";
 import { about, beyond, club, hero, races, SECTION_TOTAL, site } from "@/content/site";
 import { publicFile, resolveAsset } from "@/lib/assets";
 import { siteUrl } from "@/lib/site-url";
@@ -25,11 +24,6 @@ export default function Home() {
 
   // Media is resolved on the server: real files in /public win, otherwise
   // a labelled placeholder frame renders in their place.
-  const covers = Object.fromEntries(
-    featuredProjects
-      .filter((p) => p.cover && resolveAsset(p.cover))
-      .map((p) => [p.slug, <Media key={p.slug} src={p.cover!} alt={p.coverAlt ?? p.title} sizes="(min-width: 1024px) 45vw, 100vw" />]),
-  );
   // A cut-out hero stands on the stage; a regular photo (or none yet) fills it.
   const heroCutout = hero.cutout && Boolean(resolveAsset(hero.image));
   const heroPortrait = heroCutout ? (
@@ -59,11 +53,11 @@ export default function Home() {
   return (
     <>
       <main id="main">
-        <Hero portrait={heroPortrait} cutout={heroCutout} focus={hero.focus} />
+        <Hero portrait={heroPortrait} cutout={heroCutout} />
         <ShortVersion cvHref={cvHref} />
         <About portrait={<Media src={about.portrait} alt={about.portraitAlt} sizes="(min-width: 1024px) 33vw, 100vw" label="Portrait" />} />
         <Statement />
-        <Projects covers={covers} />
+        <WorkFilm />
         <Community />
         <Hackathons />
         <Lab />

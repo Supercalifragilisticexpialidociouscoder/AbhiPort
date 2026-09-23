@@ -1,14 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { site } from "@/content/site";
+import { hero, site } from "@/content/site";
 import { siteUrl } from "@/lib/site-url";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { PageTransition } from "@/components/PageTransition";
 import { Navigation } from "@/components/Navigation";
+import { SpaceKey } from "@/components/space/SpaceKey";
 import { Cursor } from "@/components/Cursor";
 import { Preloader } from "@/components/Preloader";
-import { publicFile } from "@/lib/assets";
+import { QuickLook } from "@/components/QuickLook";
+import { publicFile, resolveAsset } from "@/lib/assets";
 
 const archivo = Archivo({
   subsets: ["latin"],
@@ -79,6 +81,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   const cvHref = publicFile(site.cv);
+  const heroSrc = hero.cutout ? (resolveAsset(hero.image)?.url ?? null) : null;
   return (
     <html
       lang="en"
@@ -96,9 +99,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           // scroll keys) instead of toggling overflow, which would drop the
           // scrollbar and shift the page when it comes back. If the preloader
           // never takes over (a script failed), the failsafe lets the page through.
+          // It also starts the race clock: your time on the site, from this moment.
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){var d=document.documentElement;d.classList.add('js');try{if(!sessionStorage.getItem('abhi-booted')){d.dataset.boot=matchMedia('(prefers-reduced-motion: reduce)').matches?'still':localStorage.getItem('abhi-visited')?'short':'full';d.dataset.loading='1';var k={' ':1,PageUp:1,PageDown:1,Home:1,End:1,ArrowUp:1,ArrowDown:1},o={passive:false,capture:true},l=function(e){if(!d.dataset.loading||(e.type==='keydown'&&!k[e.key]))return;e.preventDefault();e.type==='wheel'&&e.stopImmediatePropagation()};['wheel','touchmove','keydown'].forEach(function(t){addEventListener(t,l,o)});window.__bootUnlock=function(){['wheel','touchmove','keydown'].forEach(function(t){removeEventListener(t,l,o)})};setTimeout(function(){if(d.dataset.loading&&!window.__bootLive){delete d.dataset.loading;delete d.dataset.boot;window.__bootUnlock()}},8000)}}catch(e){}})()",
+              "(function(){var d=document.documentElement;d.classList.add('js');try{sessionStorage.getItem('abhi-race-start')||sessionStorage.setItem('abhi-race-start',String(Date.now()));if(!sessionStorage.getItem('abhi-booted')){d.dataset.boot=matchMedia('(prefers-reduced-motion: reduce)').matches?'still':localStorage.getItem('abhi-visited')?'short':'full';d.dataset.loading='1';var k={' ':1,PageUp:1,PageDown:1,Home:1,End:1,ArrowUp:1,ArrowDown:1},o={passive:false,capture:true},l=function(e){if(!d.dataset.loading||(e.type==='keydown'&&!k[e.key]))return;e.preventDefault();e.type==='wheel'&&e.stopImmediatePropagation()};['wheel','touchmove','keydown'].forEach(function(t){addEventListener(t,l,o)});window.__bootUnlock=function(){['wheel','touchmove','keydown'].forEach(function(t){removeEventListener(t,l,o)})};setTimeout(function(){if(d.dataset.loading&&!window.__bootLive){delete d.dataset.loading;delete d.dataset.boot;window.__bootUnlock()}},8000)}}catch(e){}})()",
           }}
         />
       </head>
@@ -109,11 +113,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="garage-grid" aria-hidden />
         <Preloader />
         <PageTransition>
-          <Navigation cvHref={cvHref} />
+          <Navigation cvHref={cvHref} heroSrc={heroSrc} />
           {children}
+          {/* One listener. The rest arrives only if someone presses S. */}
+          <SpaceKey />
         </PageTransition>
         <SmoothScroll />
         <Cursor />
+        <QuickLook cvHref={cvHref} />
         <div className="grain" aria-hidden />
       </body>
     </html>

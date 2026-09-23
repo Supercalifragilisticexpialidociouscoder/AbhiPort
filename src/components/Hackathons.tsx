@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { races, sections } from "@/content/site";
-import { gsap, useGSAP, MOTION_OK, REDUCED } from "@/lib/gsap";
+import { gsap, useGSAP, MOTION_OK } from "@/lib/gsap";
 import { cn, pad } from "@/lib/cn";
 import { TransitionLink } from "./PageTransition";
 import { SectionHead } from "./ui/SectionHead";
 import { Known, Ph } from "./ui/Ph";
+import { RaceTime } from "./ui/RaceTime";
 
 const SESSION_STYLE: Record<string, string> = {
   Race: "bg-accent text-bg border-accent",
@@ -15,61 +16,16 @@ const SESSION_STYLE: Record<string, string> = {
 
 /**
  * 06 — Race weekends. Hackathons as evidence of execution under pressure,
- * not an identity: the credential, the process behind it, the problem
- * statements, and a timing sheet with no invented results. The session
- * clock counts the time you spend here — only while you're looking.
+ * not an identity: the process behind them, the problem statements, and a
+ * timing sheet with no invented results. The clock is real: your time on
+ * the site since you arrived. The full story — the 2× SIH credential,
+ * photos and every event — lives one door away, on /community.
  */
 export function Hackathons() {
   const root = useRef<HTMLElement>(null);
-  const clock = useRef<HTMLSpanElement>(null);
-  const [open, setOpen] = useState<number | null>(0);
+  const [open, setOpen] = useState<number | null>(null);
   const uid = useId();
   const s = sections.races;
-
-  useEffect(() => {
-    const el = root.current;
-    const c = clock.current;
-    if (!el || !c) return;
-    const reduce = window.matchMedia(REDUCED).matches;
-    let total = 0;
-    let start = 0;
-    let raf = 0;
-    let interval = 0;
-    let visible = false;
-    const fmt = (ms: number) => {
-      const m = Math.floor(ms / 60000);
-      const sec = Math.floor(ms / 1000) % 60;
-      const cs = Math.floor(ms / 10) % 100;
-      return reduce ? `${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}.${pad(cs)}`;
-    };
-    const tick = () => {
-      c.textContent = fmt(total + performance.now() - start);
-      if (!reduce) raf = requestAnimationFrame(tick);
-    };
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !visible) {
-          visible = true;
-          start = performance.now();
-          if (reduce) interval = window.setInterval(tick, 1000);
-          else raf = requestAnimationFrame(tick);
-        } else if (!entry.isIntersecting && visible) {
-          visible = false;
-          total += performance.now() - start;
-          cancelAnimationFrame(raf);
-          window.clearInterval(interval);
-          c.textContent = fmt(total);
-        }
-      },
-      { threshold: 0.08 },
-    );
-    io.observe(el);
-    return () => {
-      io.disconnect();
-      cancelAnimationFrame(raf);
-      window.clearInterval(interval);
-    };
-  }, []);
 
   useGSAP(
     () => {
@@ -89,12 +45,6 @@ export function Hackathons() {
         steps.forEach((st, i) => {
           lap.fromTo(st, { opacity: 0.25 }, { opacity: 1, duration: 0.4, ease: "none" }, i + 0.1);
         });
-
-        gsap.fromTo(
-          q("[data-cred]"),
-          { yPercent: 40, opacity: 0 },
-          { yPercent: 0, opacity: 1, duration: 1.3, ease: "expo.out", scrollTrigger: { trigger: q("[data-cred]")[0], start: "top 85%", once: true } },
-        );
 
         const rows = q("[data-row]");
         const tl = gsap.timeline({ scrollTrigger: { trigger: q("[data-sheet]")[0], start: "top 80%", once: true } });
@@ -117,7 +67,7 @@ export function Hackathons() {
       data-index={s.index}
       data-label={s.label}
       aria-labelledby="races-title"
-      className="relative px-gutter pb-[16vh] pt-[16vh]"
+      className="relative px-gutter pb-[12vh] pt-[14vh]"
     >
       <SectionHead
         index={s.index}
@@ -129,8 +79,8 @@ export function Hackathons() {
         }
       />
 
-      <div className="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-6">
-        <h2 id="races-title" data-race-title className="display text-[clamp(76px,13.5vw,260px)] lg:col-span-8">
+      <div className="mt-8 grid gap-10 lg:grid-cols-12 lg:gap-6">
+        <h2 id="races-title" data-race-title className="display text-[clamp(64px,11vw,210px)] lg:col-span-8">
           <span className="mask">
             <span data-race-line className="block">
               Race
@@ -151,33 +101,21 @@ export function Hackathons() {
           <div className="border border-line">
             <div className="label flex items-center justify-between border-b border-line px-4 py-2.5">
               <span className="flex items-center gap-2">
-                <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" /> Session clock
+                <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" /> Your time in race mode
               </span>
-              <span className="text-muted">You</span>
+              <span className="text-muted">Live</span>
             </div>
             <p className="px-4 pb-3 pt-4">
-              <span ref={clock} className="display tnum block text-[clamp(52px,5vw,84px)] leading-[0.8]" aria-live="off">
-                00:00.00
-              </span>
+              <span className="sr-only">Your time on this site, counting up from the moment you arrived.</span>
+              <RaceTime className="display tnum block text-[clamp(52px,5vw,84px)] leading-[0.8]" />
             </p>
-            <p className="label border-t border-line px-4 py-2.5 text-muted">Time you&apos;ve spent here. Only runs while you&apos;re watching.</p>
+            <p className="label border-t border-line px-4 py-2.5 text-muted">How long you&apos;ve been in here. Started when you arrived. A fresh visit resets it.</p>
           </div>
         </div>
       </div>
 
-      {/* The credential */}
-      <div className="mt-16 grid items-end gap-6 border-t border-fg pt-6 lg:grid-cols-12">
-        <p data-cred className="display tnum text-[clamp(140px,22vw,400px)] leading-[0.78] text-accent lg:col-span-5">
-          {races.credential.value}
-        </p>
-        <div className="lg:col-span-7 lg:pb-4">
-          <p className="display text-[clamp(40px,5vw,96px)] leading-[0.88]">{races.credential.label}</p>
-          <p className="label mt-4 text-muted">{races.credential.note}</p>
-        </div>
-      </div>
-
       {/* The lap: how a weekend actually goes */}
-      <div data-lap className="relative mt-16">
+      <div data-lap className="relative mt-14">
         <p className="label mb-5 text-muted">One lap, every time</p>
         <div className="relative">
           <span aria-hidden className="absolute left-0 right-0 top-[7px] hidden h-px bg-line md:block" />
@@ -202,7 +140,7 @@ export function Hackathons() {
       </div>
 
       {/* Timing sheet */}
-      <div data-sheet className="mt-20">
+      <div data-sheet className="mt-16">
         <div aria-hidden className="label hidden grid-cols-[3rem_7.5rem_1fr_12rem_8rem_9rem_2.5rem] gap-4 border-b border-fg pb-2 text-muted lg:grid">
           <span>#</span>
           <span>Session</span>
@@ -225,13 +163,13 @@ export function Hackathons() {
                   aria-expanded={isOpen}
                   aria-controls={panelId}
                   onClick={() => setOpen(isOpen ? null : i)}
-                  className="group grid w-full grid-cols-[2.5rem_1fr_auto] items-center gap-x-4 gap-y-2 py-5 pl-4 text-left lg:grid-cols-[3rem_7.5rem_1fr_12rem_8rem_9rem_2.5rem] lg:pl-5"
+                  className="group grid w-full grid-cols-[2.5rem_1fr_auto] items-center gap-x-4 gap-y-2 py-4 pl-4 text-left lg:grid-cols-[3rem_7.5rem_1fr_12rem_8rem_9rem_2.5rem] lg:pl-5"
                 >
                   <span className="label tnum text-muted">{pad(i + 1)}</span>
                   <span className="order-first col-span-3 lg:order-none lg:col-span-1">
                     <span className={cn("label inline-block border px-2 py-1", SESSION_STYLE[r.session])}>{r.session}</span>
                   </span>
-                  <span className="display text-[clamp(30px,3.2vw,56px)] leading-[0.9] transition-transform duration-500 ease-[var(--ease-expo)] group-hover:translate-x-2">
+                  <span className="display text-[clamp(28px,2.8vw,48px)] leading-[0.9] transition-transform duration-500 ease-[var(--ease-expo)] group-hover:translate-x-2">
                     {r.name}
                   </span>
                   <span className="label col-start-2 text-muted lg:col-start-auto">{r.kind}</span>
@@ -296,8 +234,8 @@ export function Hackathons() {
         </ol>
       </div>
 
-      {/* What race weekends train */}
-      <div className="mt-14 grid gap-6 lg:grid-cols-12">
+      {/* What race weekends train — and the door to the full story */}
+      <div className="mt-12 grid gap-8 lg:grid-cols-12 lg:gap-6">
         <p className="label text-muted lg:col-span-3">What a race weekend trains</p>
         <ul className="flex flex-wrap gap-1.5 lg:col-span-9">
           {races.skills.map((k) => (
@@ -307,6 +245,21 @@ export function Hackathons() {
           ))}
         </ul>
       </div>
+
+      <TransitionLink
+        href={races.door.href}
+        transitionLabel="Community"
+        data-cursor="Open"
+        className="group mt-12 flex flex-wrap items-center justify-between gap-6 border-y border-line py-6"
+      >
+        <span className="flex items-center gap-4">
+          <span className="grid h-12 w-12 place-items-center rounded-full border border-line transition-colors group-hover:border-accent group-hover:bg-accent group-hover:text-bg">
+            <span className="arrow-nudge-x">→</span>
+          </span>
+          <span className="display text-[clamp(26px,2.4vw,40px)]">{races.door.label}</span>
+        </span>
+        <span className="label max-w-sm text-muted">{races.door.note}</span>
+      </TransitionLink>
     </section>
   );
 }

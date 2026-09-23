@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { howIBuild, sections } from "@/content/site";
-import { getProject } from "@/content/projects";
+import { getProject, projectHref } from "@/content/projects";
 import { gsap, useGSAP, MOTION_OK, REDUCED } from "@/lib/gsap";
 import { cn, pad } from "@/lib/cn";
 import { TransitionLink } from "./PageTransition";
@@ -12,9 +12,9 @@ import { SectionHead } from "./ui/SectionHead";
 /**
  * 08 — How I build. The skeleton most projects share, filled in with the
  * real choices from two of them (switchable): one that needs every layer and
- * one that skips most of them. Then the principles behind them, and the
- * stack — grouped, never scored, each item pointing at the project that
- * proves it.
+ * one that skips most of them. Then the loop every project goes through,
+ * the principles behind it, and the stack — told through the projects that
+ * use it, never scored.
  */
 export function HowIBuild() {
   const root = useRef<HTMLElement>(null);
@@ -37,6 +37,11 @@ export function HowIBuild() {
           q("[data-layer]"),
           { opacity: 0, y: 24 },
           { opacity: 1, y: 0, duration: 0.9, stagger: 0.08, ease: "expo.out", scrollTrigger: { trigger: q("[data-pipeline]")[0], start: "top 82%", once: true } },
+        );
+        gsap.fromTo(
+          q("[data-loop-step]"),
+          { opacity: 0, x: -18 },
+          { opacity: 1, x: 0, duration: 0.9, stagger: 0.09, ease: "expo.out", scrollTrigger: { trigger: q("[data-loop]")[0], start: "top 85%", once: true } },
         );
         gsap.fromTo(
           q("[data-principle]"),
@@ -138,6 +143,29 @@ export function HowIBuild() {
         </div>
       </div>
 
+      {/* The loop — the actual process, every time */}
+      <div data-loop className="mt-20">
+        <p className="label flex items-center justify-between border-b border-fg pb-2">
+          <span>The loop</span>
+          <span className="text-muted">Every project, every time</span>
+        </p>
+        <ol className="grid grid-cols-2 gap-px bg-line sm:grid-cols-3 lg:grid-cols-6">
+          {howIBuild.loop.map((st, i) => {
+            const last = i === howIBuild.loop.length - 1;
+            return (
+              <li key={st.label} data-loop-step className="flex flex-col gap-3 bg-bg py-5 pr-4 lg:pl-4 lg:first:pl-0">
+                <span className="label tnum flex items-center gap-2 text-muted">
+                  {pad(i + 1)}
+                  <span className={last ? "text-accent" : "text-accent/70"}>{last ? "■" : "→"}</span>
+                </span>
+                <span className={cn("display text-[clamp(30px,2.6vw,46px)] leading-[0.9]", (st.label === "Break" || last) && "text-accent")}>{st.label}</span>
+                <span className="text-[14px] leading-snug text-muted">{st.note}</span>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+
       {/* Principles */}
       <div data-principles className="mt-20">
         <p className="label border-b border-fg pb-2">Five rules I actually follow</p>
@@ -152,44 +180,45 @@ export function HowIBuild() {
         </ol>
       </div>
 
-      {/* The stack, grouped */}
-      <div className="mt-20">
+      {/* The stack — told through the work, never graded */}
+      <div data-built className="mt-20">
         <div className="label flex items-center justify-between border-b border-fg pb-2">
-          <span>The stack — grouped, not graded</span>
-          <span className="text-muted">
-            <sup className="text-accent">01</sup> = where it&apos;s proven
-          </span>
+          <span>Built with — the stack, told through the work</span>
+          <span className="text-muted">No percentages. Ever.</span>
         </div>
-        <dl>
-          {howIBuild.stack.map((row) => (
-            <div key={row.group} className="grid gap-2 border-b border-line py-4 md:grid-cols-12 md:gap-6">
-              <dt className="label md:col-span-2">{row.group}</dt>
-              <dd className="flex flex-wrap gap-x-6 gap-y-2 text-[clamp(18px,1.6vw,24px)] md:col-span-10">
-                {row.items.map((item) => (
-                  <span key={item.name} className="inline-flex items-start gap-1">
-                    {item.name}
-                    {item.used?.map((slug) => {
-                      const p = getProject(slug);
-                      if (!p) return null;
-                      const href = p.study ? `/work/${p.slug}` : (p.href ?? "/#archive");
-                      return (
-                        <TransitionLink
-                          key={slug}
-                          href={href}
-                          transitionLabel={p.title}
-                          title={p.title}
-                          className="label mt-0.5 text-[10px] text-accent hover:underline"
-                        >
-                          {p.number}
-                        </TransitionLink>
-                      );
-                    })}
+        <ul>
+          {howIBuild.builtWith.map((row) => {
+            const p = getProject(row.slug);
+            const name = row.label ?? p?.title ?? row.slug;
+            const href = row.href ?? (p ? (projectHref(p) ?? "/archive") : "/archive");
+            return (
+              <li key={row.slug} className="border-b border-line">
+                <TransitionLink href={href} transitionLabel={name} className="group grid gap-2 py-4 md:grid-cols-12 md:items-baseline md:gap-6">
+                  <span className="flex items-baseline gap-3 md:col-span-4">
+                    <span className="label tnum text-accent">{p?.number ?? "HW"}</span>
+                    <span className="display text-[clamp(26px,2.2vw,38px)] leading-[0.9] transition-transform duration-500 ease-[var(--ease-expo)] group-hover:translate-x-2">
+                      {name}
+                    </span>
                   </span>
-                ))}
-              </dd>
-            </div>
+                  <span className="flex flex-wrap gap-x-5 gap-y-1 text-[clamp(17px,1.4vw,21px)] md:col-span-7">
+                    {row.items.map((it) => (
+                      <span key={it}>{it}</span>
+                    ))}
+                  </span>
+                  <span aria-hidden className="arrow-nudge-x hidden justify-self-end text-accent md:col-span-1 md:inline-block">
+                    →
+                  </span>
+                </TransitionLink>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="label mt-4 flex flex-wrap gap-x-4 gap-y-1 text-muted">
+          <span className="text-fg">Also in the toolbox —</span>
+          {howIBuild.alsoUsed.map((t) => (
+            <span key={t}>{t}</span>
           ))}
-        </dl>
+        </p>
       </div>
     </section>
   );

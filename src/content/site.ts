@@ -59,41 +59,60 @@ export const site = {
 };
 
 /**
- * One source of truth for section numbers, anchors and the nav's lap
- * counter. Reorder the page and renumber here.
+ * BUILD → BREAK → REBUILD. The nav names the phase each chapter belongs to:
+ * clean and structured, then experimental, then resolved.
+ */
+export type Phase = "build" | "break" | "rebuild";
+
+/**
+ * One source of truth for section numbers, anchors, phases and the nav's
+ * lap counter. Reorder the page and renumber here.
  */
 export const sections = {
-  hero: { index: "00", id: "top", label: "Start" },
-  short: { index: "01", id: "short", label: "Short version" },
-  about: { index: "02", id: "about", label: "Who's Abhi" },
-  statement: { index: "03", id: "thesis", label: "Work in progress" },
-  work: { index: "04", id: "work", label: "Work" },
-  community: { index: "05", id: "community", label: "Community" },
-  races: { index: "06", id: "races", label: "Race weekends" },
-  garage: { index: "07", id: "garage", label: "Garage" },
-  how: { index: "08", id: "how", label: "How I build" },
-  log: { index: "09", id: "log", label: "Build log" },
-  archive: { index: "10", id: "archive", label: "Archive" },
-  now: { index: "11", id: "now", label: "Currently" },
-  beyond: { index: "12", id: "beyond", label: "Off-track" },
-  contact: { index: "13", id: "contact", label: "Contact" },
-} as const;
+  hero: { index: "00", id: "top", label: "Start", phase: "build" },
+  short: { index: "01", id: "short", label: "Short version", phase: "build" },
+  about: { index: "02", id: "about", label: "Who's Abhi", phase: "build" },
+  statement: { index: "03", id: "thesis", label: "Work in progress", phase: "build" },
+  work: { index: "04", id: "work", label: "Work", phase: "build" },
+  community: { index: "05", id: "community", label: "Community", phase: "break" },
+  races: { index: "06", id: "races", label: "Race weekends", phase: "break" },
+  garage: { index: "07", id: "garage", label: "Garage", phase: "break" },
+  how: { index: "08", id: "how", label: "How I build", phase: "rebuild" },
+  log: { index: "09", id: "log", label: "Build log", phase: "rebuild" },
+  archive: { index: "10", id: "archive", label: "Archive", phase: "rebuild" },
+  now: { index: "11", id: "now", label: "Currently", phase: "rebuild" },
+  beyond: { index: "12", id: "beyond", label: "Off-track", phase: "rebuild" },
+  contact: { index: "13", id: "contact", label: "Contact", phase: "rebuild" },
+} as const satisfies Record<string, { index: string; id: string; label: string; phase: Phase }>;
 
 export const SECTION_TOTAL = Object.keys(sections).length - 1;
 
-export const navLinks = [
-  { label: "Work", href: "#work" },
-  { label: "Story", href: "#about" },
-  { label: "Community", href: "#community" },
-  { label: "Lab", href: "#garage" },
-  { label: "Archive", href: "#archive" },
-  { label: "Contact", href: "#contact" },
+/**
+ * The index — the map of the whole site behind the nav's INDEX button.
+ * `room` entries are pages of their own; the rest are chapters of the home
+ * page. `preview` picks the little visual each entry shows on hover.
+ */
+export const indexLinks = [
+  { n: "00", label: "Home", href: "/#top", room: false, preview: "home", note: "The name, the figure, the first five seconds." },
+  { n: "01", label: "About", href: "/#about", room: false, preview: "story", note: "Who's Abhi — in a few lines." },
+  { n: "02", label: "Work", href: "/#work", room: false, preview: "work", note: "The build index: eight projects, one scroll." },
+  { n: "03", label: "Archive", href: "/archive", room: true, preview: "archive", note: "Everything I've built, filed and searchable." },
+  { n: "04", label: "Garage", href: "/lab", room: true, preview: "lab", note: "The physical side: a prototype and nine experiments." },
+  { n: "05", label: "Research", href: "/work/certus-s2", room: true, preview: "research", note: "CERTUS-S2 — when can you trust a pixel?" },
+  { n: "06", label: "How I build", href: "/#how", room: false, preview: "how", note: "Same bones, different bodies." },
+  { n: "07", label: "Club Infin8", href: "/club-infin8", room: true, preview: "community", note: "Eight clubs, one ecosystem — and the systems behind it." },
+  { n: "08", label: "Community", href: "/community", room: true, preview: "race", note: "Hackathons, events, workshops — and 2× SIH." },
+  { n: "09", label: "Credentials", href: "/credentials", room: true, preview: "credentials", note: "The paperwork, filed after the work." },
+  { n: "10", label: "Experience", href: "/experience", room: true, preview: "experience", note: "Roles, and the receipts in commit order." },
+  { n: "11", label: "Contact", href: "/#contact", room: false, preview: "contact", note: "Let's build something." },
 ] as const;
 
 /* ── 00 · HERO ─────────────────────────────────────────────────────────── */
 
 export const hero = {
-  lines: ["Abhiram", "Reddy"] as const,
+  /** The word the whole opening is built around. Its letters react to you. */
+  word: "ABHI",
+  name: "Abhiram Reddy Palle",
   kicker: "Build 026 — work in progress",
   intro:
     "I'm 18. I build software that real business owners use in their day-to-day work, hardware that reacts to the world, and the systems behind a campus community.",
@@ -103,21 +122,34 @@ export const hero = {
     { k: "Club Infin8", v: "Founding member & Head" },
     { k: "Shipped", v: "Used daily by real business owners" },
   ],
-  /** Revealed when the portrait frame opens up on scroll. */
+  /** Two ways in: the 30-second version, or the whole thing. */
+  paths: { fast: "Quick look", deep: "Explore" },
+  /** Lands as the letters part on scroll. */
   caption: {
-    lines: ["Building", "things that", "move."],
+    lines: ["Ideas that", "refuse to stay", "ideas."],
     note: "Sensors, satellite pixels, permission slips, apps real businesses use every day — and a campus of ~3,500 students. So far.",
   },
   image: "images/abhi-hero",
   imageAlt: "Abhi as a low-poly paper figure, giving a thumbs-up",
   /**
-   * The hero image is a cut-out on a transparent background, so it stands on
-   * the dark stage instead of being cropped to fill it. `focus` is where the
-   * face sits in the image (x%, y%); the opening crop beside REDDY centres on
-   * it. Switching to a regular full-bleed photo? Set `cutout: false`.
+   * The hero image is a cut-out on a transparent background: it stands in
+   * front of the giant word, bottom-centre. Switching to a regular photo?
+   * Set `cutout: false` and it fills the stage behind the letters instead.
    */
   cutout: true,
-  focus: [47, 31] as [number, number],
+};
+
+/* ── QUICK LOOK — the recruiter layer, one keypress (Q) from anywhere ──── */
+
+export const quickLook = {
+  title: "Quick look",
+  aside: "The 30-second version",
+  role: "Engineer / Builder",
+  lead: "Software × Hardware × Research × Community",
+  /** The question every hiring manager has — "anything beyond academic projects?" */
+  inUse: "Software I've built is in daily use by real business owners. Which businesses stays private.",
+  builds: "Products, systems, security tools, research, hardware prototypes — and the digital plumbing for a campus community.",
+  explore: "Or explore the whole thing",
 };
 
 /* ── 01 · THE SHORT VERSION (recruiter snapshot) ──────────────────────── */
@@ -137,11 +169,11 @@ export const shortVersion = {
   /** The whole identity in six moves, each linking to its proof. */
   pillars: [
     { verb: "Build", what: "Software", note: "Products, systems, security tools, web apps.", href: "/#work" },
-    { verb: "Build", what: "Hardware", note: "Microcontrollers, sensors, physical prototypes.", href: "/#garage" },
+    { verb: "Build", what: "Hardware", note: "Microcontrollers, sensors, physical prototypes.", href: "/lab" },
     { verb: "Build", what: "Research", note: "CERTUS-S2 and technical experiments.", href: "/work/certus-s2" },
     { verb: "Build", what: "Communities", note: "Club Infin8: eight clubs, one umbrella.", href: "/#community" },
-    { verb: "Ship", what: "To real users", note: "Apps in daily use by real business owners.", href: "/#in-use", accent: true },
-    { verb: "Compete", what: "Hackathons", note: "2× SIH Internal Hackathon Winner.", href: "/#races" },
+    { verb: "Ship", what: "To real users", note: "Apps in daily use by real business owners.", href: "/#work", accent: true },
+    { verb: "Compete", what: "Hackathons", note: "2× SIH Internal Hackathon Winner.", href: "/community#hackathons" },
   ],
 };
 
@@ -176,27 +208,27 @@ export const statement = {
   lead: "This is a",
   struck: "Portfolio.",
   replacement: "Work in progress.",
-  note: "Not a highlights reel. A running record of what I've built, what shipped, what broke, and what I'm building next.",
 };
 
 /* ── 04 · WORK (projects live in ./projects.ts) ───────────────────────── */
 
 export const work = {
   title: "Work",
-  lead: "Three flagships: a product with real users on a real campus, a security tool born at a hackathon, and a research question. Everything else lives in the archive.",
+  headline: "Things I've built.",
+  sub: "Some shipped. Some survived a deadline. A few are still arguing with me.",
   /**
-   * The beat before the flagships: some of the work leaves the portfolio.
-   * Private by default — no business names, industries, screenshots, data
-   * or internals here unless Abhi decides to publish them.
+   * The one row in the index with no name on it: work that left the
+   * portfolio. Private by default — no business names, industries,
+   * screenshots, data or internals unless Abhi decides to publish them.
    */
   inUse: {
     id: "in-use",
-    lines: ["Some things I build for myself.", "Some I build for competitions.", "Some actually end up in people's hands."],
-    label: "From code to use",
-    body: "Some of the applications I've built are in daily use by real business owners. Not demos, not assignments: software someone opens on an ordinary workday and expects to work.",
-    privacy: "Which businesses, and what runs inside them, stays private. That's their story to tell.",
-    path: ["Problem", "Product", "Deployment", "Real users"],
+    label: "Classified",
+    title: "Business software",
+    category: "In daily use",
+    line: "Used every day by real business owners. Which ones stays private.",
   },
+  archiveCta: "Open the archive",
 };
 
 /* ── 05 · COMMUNITY — CLUB INFIN8 ─────────────────────────────────────── */
@@ -232,24 +264,10 @@ export const club = {
   ],
 };
 
-export const community = {
-  title: "Community & learning",
-  lead: "I'd rather learn in rooms full of people building things.",
-  items: [
-    { name: "GDG DevFest 2025", kind: "Event", note: "Google Developer Groups' annual developer festival." },
-    { name: "Google AI Agents Workshop", kind: "Workshop", note: "Hands-on with building AI agents." },
-    { name: "GDG on Campus", kind: "On the radar", note: "The campus chapter of the developer community — something I'm interested in." },
-  ],
-  /** Deliberately secondary. Projects > certificates. Always. */
-  certificates: [
-    "AWS Cloud Practitioner",
-    "Python Essentials — Cisco",
-    "Java Programming Assessment",
-    "AI & ML Foundations — Google",
-    "Google AI Agents Workshop",
-    "GDG DevFest 2025",
-    "JetBrains developer tooling",
-  ],
+/** The door at the end of the Club Infin8 story. */
+export const communityDoor = {
+  label: "View community & learning",
+  note: "Hackathons, events, workshops and the paperwork — on their own page.",
 };
 
 /* ── 06 · RACE WEEKENDS ───────────────────────────────────────────────── */
@@ -319,6 +337,8 @@ export const races = {
       notes: null,
     },
   ] satisfies Race[],
+  /** The door to every hackathon, with photos — where the SIH story lives in full. */
+  door: { label: "Every race weekend, in full", note: "Hackathons, the 2× SIH story, problem statements and photos.", href: "/community#hackathons" },
   skills: [
     "Interpreting problem statements",
     "Domain research",
@@ -358,59 +378,26 @@ export type GlyphName =
 
 export const garage = {
   title: "The Garage",
-  lead: "The hardware lab. Boards, sensors, half-wired ideas — and the occasional prototype that actually works.",
+  lead: "The physical side. Boards, sensors, half-wired ideas — and the occasional prototype that actually works.",
   scope: {
     title: "MPU6050 · CH-01",
     note: "Move your cursor. This is roughly how an accelerometer sees motion — I just swapped the sensor for your mouse.",
     touchNote: "Scroll or drag. This is roughly how an accelerometer sees motion — I just swapped the sensor for your thumb.",
   },
-  bins: {
-    hardware: [
-      { id: "P-01", name: "ESP32", kind: "Microcontroller", line: "Wi-Fi and Bluetooth on one chip. The default brain for anything connected.", spec: "Dual-core Xtensa LX6 · up to 240 MHz · Wi-Fi 802.11 b/g/n · Bluetooth", glyph: "esp32" },
-      { id: "P-02", name: "Arduino", kind: "Microcontroller", line: "The fastest route from idea to blinking LED.", spec: "Uno: ATmega328P · 16 MHz · 5 V logic", glyph: "arduino" },
-      { id: "P-03", name: "Raspberry Pi Pico", kind: "Microcontroller", line: "Cheap, fast, and programmable I/O for the weird timing jobs.", spec: "RP2040 · 2× Arm Cortex-M0+ · up to 133 MHz · 264 KB SRAM", glyph: "pico" },
-      { id: "P-04", name: "MPU6050", kind: "IMU", line: "Six axes of motion: how fast it turns, how hard it moves.", spec: "3-axis gyroscope + 3-axis accelerometer · I²C", glyph: "imu" },
-      { id: "P-05", name: "MPU9250", kind: "IMU", line: "The MPU6050 plus a compass. Nine axes.", spec: "Gyro + accelerometer + AK8963 magnetometer · I²C / SPI", glyph: "imu9" },
-      { id: "P-06", name: "HC-SR04", kind: "Distance", line: "Ping, listen, measure the echo.", spec: "40 kHz ultrasonic ranging · roughly 2–400 cm", glyph: "ultrasonic" },
-      { id: "P-07", name: "VL53L0X", kind: "Distance", line: "Distance by timing light instead of sound.", spec: "Laser time-of-flight · 940 nm VCSEL · up to ~2 m · I²C", glyph: "tof" },
-      { id: "P-08", name: "IR sensors", kind: "Detection", line: "Is something there? Is the line still under me?", spec: "IR emitter + receiver pair · obstacle and line detection", glyph: "ir" },
-      { id: "P-09", name: "LEDs", kind: "Output", line: "The cheapest user interface there is.", spec: "Indicator output · always with a current-limiting resistor", glyph: "led" },
-      { id: "P-10", name: "Buzzer", kind: "Output", line: "For when a light isn't loud enough.", spec: "Piezo · audible alerts", glyph: "buzzer" },
-    ] satisfies Part[],
-    software: [
-      { id: "S-01", name: "Python", kind: "Language", line: "Research code for CERTUS-S2, scripts, data work.", spec: "PY", glyph: "mono" },
-      { id: "S-02", name: "C#", kind: "Language", line: "Strongly typed and at home anywhere .NET runs.", spec: "C#", glyph: "mono" },
-      { id: "S-03", name: "Java", kind: "Language", line: "The JVM classic.", spec: "JV", glyph: "mono" },
-      { id: "S-04", name: "React", kind: "Frontend", line: "Infin8 Access runs on it.", spec: "RE", glyph: "mono" },
-      { id: "S-05", name: "Next.js", kind: "Framework", line: "This website runs on it.", spec: "NX", glyph: "mono" },
-      { id: "S-06", name: "Cloudflare", kind: "Edge", line: "Workers and D1 behind Infin8 Access.", spec: "CF", glyph: "mono" },
-      { id: "S-07", name: "Docker", kind: "Tooling", line: "The same container on a laptop and in production.", spec: "DK", glyph: "mono" },
-    ] satisfies Part[],
-    creative: [
-      { id: "C-01", name: "Blender", kind: "3D", line: "Modelling, lighting, renders.", spec: "BL", glyph: "mono" },
-      { id: "C-02", name: "DaVinci Resolve", kind: "Video", line: "Editing and colour.", spec: "DR", glyph: "mono" },
-      { id: "C-03", name: "Premiere Pro", kind: "Video", line: "Editing.", spec: "PR", glyph: "mono" },
-    ] satisfies Part[],
-  },
-  /** Prototypes on the bench. The first one gets the interactive dial. */
-  bench: [
-    {
-      id: "B-01",
-      title: "Motorcycle safety prototype",
-      status: "Prototype",
-      disclaimer: "An experimental safety concept — not a production safety system.",
-      summary: "Reads orientation from an MPU6050, works out the lean angle, and warns with LEDs and a buzzer when it gets extreme.",
-      parts: ["MPU6050", "Microcontroller", "LEDs", "Buzzer"],
-      story: [
-        { label: "Idea", note: "Could a bike know when it's leaning too far?" },
-        { label: "Wiring", note: "IMU, LEDs, buzzer, one microcontroller." },
-        { label: "Code", note: "Raw readings → angle → threshold → warning." },
-        { label: "Why is it reading −135°?", note: "The sensor had other plans.", bug: true },
-        { label: "Debug", note: "Check the axes. Check the maths. Check the axes again." },
-        { label: "Working prototype", note: "It worked. Eventually." },
-      ],
-    },
-  ],
+  parts: [
+    { id: "P-01", name: "ESP32", kind: "Microcontroller", line: "Wi-Fi and Bluetooth on one chip. The default brain for anything connected.", spec: "Dual-core Xtensa LX6 · up to 240 MHz · Wi-Fi 802.11 b/g/n · Bluetooth", glyph: "esp32" },
+    { id: "P-02", name: "Arduino", kind: "Microcontroller", line: "The fastest route from idea to blinking LED.", spec: "Uno: ATmega328P · 16 MHz · 5 V logic", glyph: "arduino" },
+    { id: "P-03", name: "Raspberry Pi Pico", kind: "Microcontroller", line: "Cheap, fast, and programmable I/O for the weird timing jobs.", spec: "RP2040 · 2× Arm Cortex-M0+ · up to 133 MHz · 264 KB SRAM", glyph: "pico" },
+    { id: "P-04", name: "MPU6050", kind: "IMU", line: "Six axes of motion: how fast it turns, how hard it moves.", spec: "3-axis gyroscope + 3-axis accelerometer · I²C", glyph: "imu" },
+    { id: "P-05", name: "MPU9250", kind: "IMU", line: "The MPU6050 plus a compass. Nine axes.", spec: "Gyro + accelerometer + AK8963 magnetometer · I²C / SPI", glyph: "imu9" },
+    { id: "P-06", name: "HC-SR04", kind: "Distance", line: "Ping, listen, measure the echo.", spec: "40 kHz ultrasonic ranging · roughly 2–400 cm", glyph: "ultrasonic" },
+    { id: "P-07", name: "VL53L0X", kind: "Distance", line: "Distance by timing light instead of sound.", spec: "Laser time-of-flight · 940 nm VCSEL · up to ~2 m · I²C", glyph: "tof" },
+    { id: "P-08", name: "IR sensors", kind: "Detection", line: "Is something there? Is the line still under me?", spec: "IR emitter + receiver pair · obstacle and line detection", glyph: "ir" },
+    { id: "P-09", name: "LEDs", kind: "Output", line: "The cheapest user interface there is.", spec: "Indicator output · always with a current-limiting resistor", glyph: "led" },
+    { id: "P-10", name: "Buzzer", kind: "Output", line: "For when a light isn't loud enough.", spec: "Piezo · audible alerts", glyph: "buzzer" },
+  ] satisfies Part[],
+  /** The door into the lab: every experiment gets its own page. */
+  index: { title: "Lab index", note: "One prototype. Nine experiments. Each one has a page — pick one." },
 };
 
 /* ── 08 · HOW I BUILD ─────────────────────────────────────────────────── */
@@ -430,10 +417,19 @@ export const howIBuild = {
       choices: ["React · Vite · Tailwind", "Hono on Cloudflare Workers", "Cloudflare D1 (SQL)", "JWT via WebCrypto · role-based access", "Cloudflare's edge", "Deployed on Workers"] as Maybe<string>[],
     },
     {
-      slug: "project-zero",
+      slug: "abhiport",
       name: "This website",
       choices: ["Next.js 16 · React 19 · Tailwind 4 · GSAP", "None — nothing to call", "None — the content is two TypeScript files", "None — nothing to log into", "Static pages, prerendered at build time", null] as Maybe<string>[],
     },
+  ],
+  /** The actual process, every time. */
+  loop: [
+    { label: "Idea", note: "Something bugs me." },
+    { label: "Prototype", note: "The ugliest version that proves it." },
+    { label: "Break", note: "It breaks. It always breaks." },
+    { label: "Debug", note: "Most of the job, honestly." },
+    { label: "Iterate", note: "Version two knows what one didn't." },
+    { label: "Ship", note: "Real people, real use." },
   ],
   principles: [
     { name: "Ship", body: "A working system beats an imaginary perfect one. Get it in front of people, then argue about it." },
@@ -442,16 +438,22 @@ export const howIBuild = {
     { name: "Keep iterating", body: "First versions are rarely the final versions. Mine definitely aren't." },
     { name: "Make it real", body: "Real users, real data, real constraints. A campus, a business, a satellite — not another to-do app." },
   ],
-  /** No percentages, ever. `used` links a technology to the projects that prove it. */
-  stack: [
-    { group: "Build", items: [{ name: "Python", used: ["certus-s2"] }, { name: "Java" }, { name: "C#" }, { name: "JavaScript" }] },
-    { group: "Web", items: [{ name: "React", used: ["infin8-access"] }, { name: "Next.js", used: ["project-zero"] }, { name: "Vite", used: ["infin8-access"] }, { name: "Tailwind", used: ["infin8-access", "project-zero"] }] },
-    { group: "Cloud", items: [{ name: "AWS" }, { name: "Cloudflare", used: ["infin8-access"] }, { name: "Workers", used: ["infin8-access"] }] },
-    { group: "Data", items: [{ name: "PostgreSQL" }, { name: "MySQL" }, { name: "D1", used: ["infin8-access"] }] },
-    { group: "Systems", items: [{ name: "Docker" }, { name: "Git" }, { name: "APIs", used: ["infin8-access"] }] },
-    { group: "Creative", items: [{ name: "Blender" }, { name: "DaVinci Resolve" }, { name: "Premiere Pro" }] },
-    { group: "Hardware", items: [{ name: "ESP32" }, { name: "Arduino" }, { name: "Raspberry Pi Pico" }, { name: "Sensors", used: ["lean-angle-prototype"] }] },
-  ] satisfies { group: string; items: StackItem[] }[],
+  /**
+   * No percentages, ever — and no logo wall. The stack is told through the
+   * work: each row is a project, and what it's built with.
+   */
+  builtWith: [
+    { slug: "infin8-access", items: ["React", "TypeScript", "Cloudflare Workers", "Hono", "D1", "JWT"] },
+    { slug: "secret-leak-detector", items: ["Node.js", "Git hooks", "VS Code API", "GitHub Apps", "HMAC-SHA256"] },
+    { slug: "certus-s2", items: ["Python", "STAC", "Planetary Computer", "Sentinel-2", "Remote sensing"] },
+    { slug: "infin8-calendar", items: ["React", "TypeScript", "Express", "SQLite", "zod"] },
+    { slug: "socialguard", items: ["Python", "Streamlit", "scikit-learn", "pandas"] },
+    { slug: "hakit", items: ["React", "TypeScript", "MediaPipe", "Express"] },
+    { slug: "lab", label: "The Garage", href: "/lab", items: ["ESP32", "Arduino", "Raspberry Pi Pico", "MPU6050", "HC-SR04", "VL53L0X"] },
+    { slug: "abhiport", items: ["Next.js", "TypeScript", "Tailwind", "GSAP", "Lenis"] },
+  ] as { slug: string; label?: string; href?: string; items: string[] }[],
+  /** Used, just not shown off on this site yet. */
+  alsoUsed: ["Java", "C#", "AWS", "PostgreSQL", "MySQL", "Docker", "Blender", "DaVinci Resolve", "Premiere Pro"],
 };
 
 /* ── 09 · BUILD LOG ───────────────────────────────────────────────────── */
@@ -485,6 +487,8 @@ export const buildLog = {
 export const archive = {
   title: "The archive",
   lead: "Everything — including the small stuff. Some of it started as a weekend idea. Most of it became considerably less of a weekend.",
+  /** The home page's door into /archive. */
+  door: "The workshop behind the portfolio: hackathon builds, experiments, learning projects, hardware — filed, filterable, searchable.",
   statuses: {
     Shipped: "In use.",
     Active: "Being built right now.",
@@ -492,6 +496,7 @@ export const archive = {
     Research: "Asking a question properly.",
     Experiment: "Poking at something to see what happens.",
     Hackathon: "Built against a clock.",
+    Learning: "Built to learn it.",
     Archived: "Done, or parked.",
   },
   /** Explains the one thing the index leaves out on purpose. */

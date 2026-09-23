@@ -1,5 +1,6 @@
 "use client";
 
+import { sections as chapters, type Phase } from "@/content/site";
 import { useGSAP, ScrollTrigger } from "@/lib/gsap";
 import { sectionStore } from "@/lib/section-store";
 import { scrollToTarget } from "@/lib/scroll";
@@ -22,8 +23,13 @@ export function ScrollDirector({ total }: { total?: number }) {
 
     const activate = (el: HTMLElement) => {
       html.dataset.theme = el.dataset.theme;
+      // BUILD / BREAK / REBUILD: each chapter's phase lives in the registry.
+      const phase: Phase = Object.values(chapters).find((c) => c.id === el.id)?.phase ?? "build";
+      html.dataset.phase = phase;
       if (el.dataset.index && el.dataset.label) {
-        sectionStore.set({ index: el.dataset.index, label: el.dataset.label, total: String(count).padStart(2, "0") });
+        sectionStore.set({ index: el.dataset.index, label: el.dataset.label, total: String(count).padStart(2, "0"), phase });
+      } else {
+        sectionStore.set({ phase });
       }
     };
 
@@ -76,6 +82,7 @@ export function ScrollDirector({ total }: { total?: number }) {
       master.kill();
       html.classList.remove("theme-sync");
       html.dataset.theme = "ink";
+      delete html.dataset.phase;
     };
   });
 

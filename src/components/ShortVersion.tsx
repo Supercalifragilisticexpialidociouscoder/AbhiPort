@@ -122,7 +122,7 @@ export function ShortVersion({ cvHref }: { cvHref: string | null }) {
 
       <div className="mt-12 grid gap-8 lg:grid-cols-12 lg:gap-6">
         <p className="label text-muted lg:col-span-3">
-          {featuredProjects.length} flagships · {projects.length} archive entries · all numbers real
+          {featuredProjects.length} in the film · {projects.length} in the archive · all numbers real
         </p>
         <nav aria-label="Quick links" className="flex flex-wrap gap-2.5 lg:col-span-9">
           {cvHref ? (
@@ -148,10 +148,10 @@ export function ShortVersion({ cvHref }: { cvHref: string | null }) {
             ) : null,
           )}
           <TransitionLink href="/#work" className="label group inline-flex items-center gap-2 border border-line px-4 py-3 transition-colors hover:border-fg">
-            Featured work <span className="arrow-nudge-x">↓</span>
+            The work <span className="arrow-nudge-x">↓</span>
           </TransitionLink>
-          <TransitionLink href="/#archive" className="label group inline-flex items-center gap-2 border border-line px-4 py-3 transition-colors hover:border-fg">
-            The archive <span className="arrow-nudge-x">↓</span>
+          <TransitionLink href="/archive" transitionLabel="Archive" className="label group inline-flex items-center gap-2 border border-line px-4 py-3 transition-colors hover:border-fg">
+            The archive <span className="arrow-nudge-x">→</span>
           </TransitionLink>
         </nav>
       </div>

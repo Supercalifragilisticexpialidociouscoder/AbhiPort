@@ -183,8 +183,10 @@ html.lenis,
 html.lenis body {
   height: auto;
 }
-.lenis:not(.lenis-autoToggle).lenis-stopped {
-  overflow: clip;
+@media (hover: none) {
+  .lenis:not(.lenis-autoToggle).lenis-stopped {
+    overflow: clip;
+  }
 }
 .lenis [data-lenis-prevent] {
   overscroll-behavior: contain;
@@ -368,22 +370,20 @@ html:not([data-loading]) .preloader {
   --boot-k: 2.43;
   touch-action: none;
 }
-/* Upright screens: a bigger number that stretches less. */
+/* Upright screens: a bigger number that stretches less (87.5 = the
+   "semi-condensed" stop, which the zero's measurements cover exactly). */
 @media (max-aspect-ratio: 1/1) {
   .preloader {
     --seam: 60%;
-    --boot-wmax: 80;
-    --boot-k: 1.63;
+    --boot-wmax: 87.5;
+    --boot-k: 1.79;
   }
 }
 
-.boot-door {
-  position: absolute;
-  inset-inline: 0;
-  overflow: hidden;
+.boot-veil {
   background: #0b0b0a;
 }
-.boot-door::after {
+.boot-veil::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -396,8 +396,56 @@ html:not([data-loading]) .preloader {
 }
 .boot-count {
   --wdth: var(--boot-wmin);
+  bottom: calc(100% - var(--seam) + 0.04em);
   font-size: min(calc((100vw - 2 * var(--gutter) - 2.5rem) / var(--boot-k)), 60vh);
 }
+/* The zero we're about to dive through. */
+.boot-count [data-d].is-hot {
+  color: #ff4521;
+}
+/* The heat that blooms behind it on impact (sized and placed in JS). */
+.boot-heat {
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 69 33 / 0.5), rgb(255 69 33 / 0.16) 55%, transparent);
+}
+.boot-rail {
+  top: calc(var(--seam) + 26px);
+}
+
+/* The tach: ticks climb the seam as the page loads; the last few are the
+   redline, which blinks against the limiter and flashes on impact. */
+.boot-ticks {
+  top: calc(var(--seam) + 4px);
+  height: 13px;
+}
+.boot-tick {
+  width: 1px;
+  height: 5px;
+  background: rgb(236 235 230 / 0.18);
+  transition:
+    background-color 0.12s,
+    height 0.2s var(--ease-expo);
+}
+.boot-tick.is-lit {
+  height: 13px;
+  background: #ecebe6;
+}
+.boot-tick.is-red {
+  width: 2px;
+}
+.boot-tick.is-red.is-lit,
+.boot-ticks.is-redline .boot-tick {
+  background: #ff4521;
+}
+.boot-ticks.is-limit .boot-tick.is-red.is-lit {
+  animation: limiter 0.14s steps(1) infinite;
+}
+@keyframes limiter {
+  50% {
+    opacity: 0.25;
+  }
+}
+
 .preloader [data-readout] {
   opacity: 0;
   visibility: hidden;
@@ -458,6 +506,34 @@ main {
   z-index: 1;
 }
 
+/* ── Build index (home: Work) ──────────────────────────────────────────── */
+
+.reel-row.is-live .reel-num {
+  color: var(--accent);
+}
+
+/* ── Archive door (home) ──────────────────────────────────────────────── */
+
+.archive-ticker {
+  overflow: hidden;
+}
+.archive-ticker-track {
+  animation: ticker 70s linear infinite;
+}
+.archive-ticker:hover .archive-ticker-track {
+  animation-play-state: paused;
+}
+@keyframes ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .archive-ticker-track {
+    animation: none;
+  }
+}
+
 /* ── Nav ───────────────────────────────────────────────────────────────── */
 
 .nav-blend {
@@ -479,6 +555,37 @@ html[data-theme="ir"] .nav-blend {
 
 html:not([data-theme="garage"]) .hud-only {
   display: none;
+}
+
+/* ── 04 · Work film ────────────────────────────────────────────────────
+   Default (mobile, reduced motion, no JS): eight scenes stacked and fully
+   readable. Pinned (desktop + motion): one viewport, scenes cut across it. */
+.film-scenes > * + * {
+  border-top: 1px solid var(--line);
+}
+[data-film="pinned"] .film-stage {
+  height: 100vh;
+  overflow: hidden;
+}
+[data-film="pinned"] .film-scenes {
+  height: 100%;
+}
+[data-film="pinned"] .film-scenes > * + * {
+  border-top: 0;
+}
+[data-film="pinned"] .film-scene {
+  position: absolute;
+  inset: 0;
+  /* Opaque, so the incoming scene covers the one it replaces: a cut, not a
+     dissolve. The surface follows whatever theme the page is wearing. */
+  background-color: var(--bg);
+  will-change: clip-path, opacity;
+}
+[data-film="pinned"] .film-scene > [data-scene-inner] {
+  height: 100%;
+}
+[data-film="pinned"] .film-hud {
+  display: flex;
 }
 
 /* ── Custom cursor ─────────────────────────────────────────────────────── */
@@ -598,87 +705,124 @@ html[data-theme="garage"] .cursor-coords {
   opacity: 1;
 }
 
-/* ── Hero ──────────────────────────────────────────────────────────────── */
+/* ── Hero: the word behind the figure ──────────────────────────────────── */
 
-.hero-grid {
-  display: grid;
-  height: 100%;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
-  grid-template-areas:
-    "top"
-    "slot"
-    "l1"
-    "l2"
-    "meta";
+.hero-word {
+  top: 11%;
+  bottom: 13%;
 }
-.hero-grid > [data-area="top"] {
-  grid-area: top;
-}
-.hero-grid > [data-area="slot"] {
-  grid-area: slot;
-}
-.hero-grid > [data-area="l1"] {
-  grid-area: l1;
-}
-.hero-grid > [data-area="l2"] {
-  grid-area: l2;
-}
-.hero-grid > [data-area="meta"] {
-  grid-area: meta;
-}
-/* Landscape screens tuck the portrait beside REDDY; portrait screens (phones,
-   upright tablets) stack it above the name where there's height to spare. */
-@media (min-width: 768px) and (min-aspect-ratio: 1/1) {
-  .hero-grid {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
-    grid-template-areas:
-      "top top"
-      ". ."
-      "l1 l1"
-      "slot l2"
-      "meta meta";
+/* Upright screens: the word rides high, the figure stands below it. */
+@media (max-aspect-ratio: 1/1) {
+  .hero-word {
+    top: calc(var(--nav-h) + 8vh);
+    bottom: auto;
+    height: 30%;
   }
 }
 
-/* A cut-out portrait stands on the stage: bottom-anchored, sized by height,
-   cropped at the sides on narrow screens rather than shrunk. Any cut-out fits
-   (object-contain); `hero.focus` in site.ts is measured against this box. */
+/* A cut-out stands in front of the word: bottom-anchored, sized by height,
+   cropped at the sides on narrow screens rather than shrunk. */
 .hero-figure {
-  height: 84%;
+  height: 90%;
   aspect-ratio: 9 / 10;
 }
-@media (min-width: 768px) and (min-aspect-ratio: 1/1) {
+@media (max-aspect-ratio: 1/1) {
   .hero-figure {
-    height: 94%;
+    height: 64%;
   }
 }
 .hero-figure-glow {
   inset: 6% -32% -4%;
   background: radial-gradient(closest-side, rgb(255 69 33 / 0.3), rgb(255 69 33 / 0.1) 55%, transparent);
 }
-
-.hero-name {
-  font-size: var(--name-size, 25vw);
-  --wdth: var(--name-wdth, 62);
-  line-height: 0.8;
-  white-space: nowrap;
-}
-
-html.js .hero [data-frame] {
-  clip-path: inset(50% 50% 50% 50%);
+/* Keeps the rails legible where they overlap the figure. */
+.hero-scrim {
+  background: linear-gradient(to top, rgb(11 11 10 / 0.94), rgb(11 11 10 / 0.8) 16%, rgb(11 11 10 / 0) 44%);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  html.js .hero-name [data-char] {
-    transform: translateY(105%);
-  }
+  html.js .hero [data-letter],
+  html.js .hero [data-figure-intro],
   html.js .hero [data-intro] {
     opacity: 0;
   }
-  html.js .hero [data-shutter] {
-    display: block;
+}
+
+/* ── Elastic word ──────────────────────────────────────────────────────── */
+
+.elastic-word {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  --ew-size: 20vw;
+}
+.elastic-letter {
+  display: inline-block;
+}
+.elastic-letter > [data-glyph] {
+  display: block;
+  font-size: var(--ew-size);
+  line-height: 0.74;
+  will-change: transform;
+}
+
+/* ── Nav: phase + the index button ──────────────────────────────────── */
+
+.nav-phase {
+  color: var(--muted);
+}
+.nav-phase::before {
+  content: "· ";
+}
+.nav-phase[data-phase="break"] {
+  color: var(--accent);
+  animation: phase-glitch 2.8s steps(1) infinite;
+}
+.nav-phase[data-phase="rebuild"] {
+  color: var(--fg);
+}
+@keyframes phase-glitch {
+  0%,
+  86%,
+  100% {
+    translate: 0 0;
+    opacity: 1;
+  }
+  88% {
+    translate: 2px 0;
+    opacity: 0.55;
+  }
+  90% {
+    translate: -2px 0;
+  }
+}
+.nav-burger {
+  display: inline-grid;
+  gap: 4px;
+  width: 16px;
+}
+.nav-burger span {
+  display: block;
+  height: 1px;
+  background: currentColor;
+  transition: scale 0.5s var(--ease-expo);
+}
+.nav-burger span:last-child {
+  width: 60%;
+  justify-self: end;
+  transform-origin: right;
+}
+button:hover > .nav-burger span:last-child {
+  scale: 1.66 1;
+}
+.index-preview {
+  animation: preview-in 0.6s var(--ease-expo) both;
+}
+@keyframes preview-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
   }
 }
 
@@ -688,15 +832,6 @@ html.js .hero [data-frame] {
 @keyframes blink {
   50% {
     opacity: 0;
-  }
-}
-
-@keyframes cue {
-  0% {
-    transform: translateY(-100%);
-  }
-  100% {
-    transform: translateY(300%);
   }
 }
 
