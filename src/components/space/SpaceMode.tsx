@@ -70,9 +70,9 @@ export function SpaceMode({ onExit, reduced = false }: { onExit: () => void; red
     const lenis = getLenis();
     lenis?.stop(); // the arrows fly the ship; the page follows it
 
-    const css = getComputedStyle(document.documentElement);
-    const accent = css.getPropertyValue("--accent").trim() || "#ff4521";
-    const fg = css.getPropertyValue("--fg").trim() || "#ecebe6";
+    // Live: the tokens interpolate as sections change, so the craft picks up
+    // whatever surface it is flying over instead of freezing at mount.
+    const surface = getComputedStyle(document.documentElement);
 
     let w = window.innerWidth;
     let h = window.innerHeight;
@@ -149,6 +149,8 @@ export function SpaceMode({ onExit, reduced = false }: { onExit: () => void; red
     };
 
     const frame = (now: number) => {
+      const accent = surface.getPropertyValue("--accent").trim() || "#ff4521";
+      const fg = surface.getPropertyValue("--fg").trim() || "#ecebe6";
       const dt = Math.min(3, (now - last) / 16.667);
       last = now;
       intro = reduced ? 1 : Math.min(1, intro + dt * 0.06);
@@ -283,37 +285,135 @@ export function SpaceMode({ onExit, reduced = false }: { onExit: () => void; red
       });
       ctx.stroke();
 
-      // the craft: a small instrument, not an arcade sprite
+      // ── the craft ───────────────────────────────────────────────────
+      // Drawn like a schematic of a small experimental spacecraft: blunt
+      // nose with an antenna, a cockpit canopy, a body wide enough to read
+      // as one, delta wings with tip fins, and three nozzles. Local space
+      // points up; it measures roughly 46 × 32.
       const shipY = ship.y - sy;
       ctx.save();
       ctx.translate(ship.x, shipY);
       ctx.rotate(ship.a + Math.PI / 2);
-      ctx.globalAlpha = intro;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+
+      // engines, behind everything
       if (ship.thrust > 0.02) {
-        ctx.globalAlpha = intro * ship.thrust * (0.5 + Math.random() * 0.5);
-        ctx.strokeStyle = accent;
+        const glow = ctx.createRadialGradient(0, 17, 0, 0, 17, 32);
+        glow.addColorStop(0, accent);
+        glow.addColorStop(1, "transparent");
+        ctx.globalAlpha = intro * ship.thrust * 0.4;
+        ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.moveTo(-3.5, 9);
-        ctx.lineTo(0, 15 + ship.thrust * 9);
-        ctx.lineTo(3.5, 9);
+        ctx.arc(0, 17, 32, 0, TAU);
+        ctx.fill();
+
+        const flicker = 0.7 + Math.random() * 0.3;
+        const plume = (10 + ship.thrust * 16) * flicker;
+        ctx.globalAlpha = intro * ship.thrust * flicker;
+        ctx.fillStyle = accent;
+        ctx.beginPath();
+        ctx.moveTo(-2.3, 16.5);
+        ctx.lineTo(0, 17 + plume);
+        ctx.lineTo(2.3, 16.5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 1.1;
+        ctx.beginPath();
+        ctx.moveTo(-3.6, 15.5);
+        ctx.lineTo(-3.6, 15.5 + plume * 0.45);
+        ctx.moveTo(3.6, 15.5);
+        ctx.lineTo(3.6, 15.5 + plume * 0.45);
         ctx.stroke();
       }
+
       ctx.globalAlpha = intro;
+      ctx.fillStyle = surface.getPropertyValue("--bg").trim() || "#0b0b0a";
       ctx.strokeStyle = accent;
-      ctx.lineWidth = 1.4;
+      ctx.lineWidth = 1.3;
+
+      // delta wings, under the hull
       ctx.beginPath();
-      ctx.moveTo(0, -13);
-      ctx.lineTo(8, 9);
-      ctx.lineTo(0, 5);
-      ctx.lineTo(-8, 9);
+      ctx.moveTo(6, 1);
+      ctx.lineTo(16, 13);
+      ctx.lineTo(5.6, 13);
       ctx.closePath();
+      ctx.moveTo(-6, 1);
+      ctx.lineTo(-16, 13);
+      ctx.lineTo(-5.6, 13);
+      ctx.closePath();
+      ctx.fill();
       ctx.stroke();
-      ctx.strokeStyle = fg;
-      ctx.globalAlpha = intro * 0.8;
       ctx.beginPath();
-      ctx.moveTo(0, -6);
-      ctx.lineTo(0, 1);
+      ctx.moveTo(16, 13);
+      ctx.lineTo(16, 8.5);
+      ctx.moveTo(-16, 13);
+      ctx.lineTo(-16, 8.5);
       ctx.stroke();
+
+      // hull
+      ctx.beginPath();
+      ctx.moveTo(0, -20);
+      ctx.bezierCurveTo(3.5, -16, 5.5, -8, 6, 0);
+      ctx.lineTo(5.2, 13);
+      ctx.lineTo(-5.2, 13);
+      ctx.lineTo(-6, 0);
+      ctx.bezierCurveTo(-5.5, -8, -3.5, -16, 0, -20);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // nozzles and nose antenna
+      ctx.beginPath();
+      ctx.moveTo(-3.6, 13);
+      ctx.lineTo(-3.6, 15.8);
+      ctx.moveTo(0, 13);
+      ctx.lineTo(0, 17);
+      ctx.moveTo(3.6, 13);
+      ctx.lineTo(3.6, 15.8);
+      ctx.moveTo(0, -20);
+      ctx.lineTo(0, -26);
+      ctx.moveTo(-2, -24);
+      ctx.lineTo(2, -24);
+      ctx.stroke();
+
+      // cockpit canopy — filled, so it reads as a cockpit at a glance
+      ctx.globalAlpha = intro * 0.85;
+      ctx.fillStyle = fg;
+      ctx.beginPath();
+      ctx.moveTo(0, -13.5);
+      ctx.lineTo(3.2, -8);
+      ctx.lineTo(2.4, -2.5);
+      ctx.lineTo(-2.4, -2.5);
+      ctx.lineTo(-3.2, -8);
+      ctx.closePath();
+      ctx.fill();
+
+      // panel lines
+      ctx.globalAlpha = intro * 0.55;
+      ctx.strokeStyle = fg;
+      ctx.lineWidth = 0.85;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, 11);
+      ctx.moveTo(-4.4, 4);
+      ctx.lineTo(0, 6.4);
+      ctx.lineTo(4.4, 4);
+      ctx.moveTo(-4.9, 8);
+      ctx.lineTo(0, 10.4);
+      ctx.lineTo(4.9, 8);
+      ctx.stroke();
+
+      // wingtip beacons
+      ctx.globalAlpha = intro * (0.25 + 0.75 * Math.abs(Math.sin(now / 480)));
+      ctx.fillStyle = accent;
+      ctx.beginPath();
+      ctx.arc(16, 12.4, 1.6, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(-16, 12.4, 1.6, 0, TAU);
+      ctx.fill();
       ctx.restore();
 
       // ── telemetry ───────────────────────────────────────────────────
