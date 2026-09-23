@@ -4,11 +4,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type Engine = React.ComponentType<{ onExit: () => void; reduced: boolean }>;
 
-/** Desktop, and not a touch-only device. Checked on the keypress, never at
+/** Desktop, with a real pointer somewhere. Checked on the keypress, never at
  *  mount, so a window that starts narrow — or a viewport that settles late —
- *  still finds it. Reduced motion doesn't lock anyone out: it flies calmer. */
+ *  still finds it. `any-pointer: fine` rather than `pointer: coarse`, so a
+ *  laptop with a touchscreen still qualifies. Reduced motion doesn't lock
+ *  anyone out either: it flies calmer. */
 function allowed() {
-  return window.innerWidth >= 1024 && !window.matchMedia("(pointer: coarse)").matches;
+  // A mouse or trackpad is the real test for "desktop" — a phone has neither.
+  // Width only rules out windows too small to fly in; 1024 was wrong, since
+  // plenty of real desktop windows (split screens, 13" laptops) sit below it.
+  if (!window.matchMedia("(any-pointer: fine)").matches) return false;
+  if (window.innerWidth < 720) return false;
+  // Not over the boot sequence.
+  return !document.documentElement.dataset.loading;
 }
 
 /**
@@ -36,8 +44,9 @@ export function SpaceKey() {
       // ESC is the way out, so this only ever switches Space Mode on.
       setFlight((s) => (s.on ? s : { on: true, reduced }));
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // Capture phase: nothing downstream gets to swallow the key first.
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, []);
 
   useEffect(() => {
