@@ -3,185 +3,113 @@
 import { useRef } from "react";
 import { hero, sections, site } from "@/content/site";
 import { onBootReveal } from "@/lib/boot";
-import { gsap, ScrollTrigger, useGSAP, MOTION_OK, REDUCED } from "@/lib/gsap";
-
-function Chars({ text }: { text: string }) {
-  return (
-    <>
-      {Array.from(text).map((c, i) => (
-        <span key={i} data-char className="inline-block will-change-transform">
-          {c}
-        </span>
-      ))}
-    </>
-  );
-}
-
-const WDTH_MIN = 62;
-const WDTH_MAX = 125;
-const LINE = 0.8; // line-height of .hero-name
+import { gsap, ScrollTrigger, useGSAP, MOTION_OK } from "@/lib/gsap";
+import { overlays } from "@/lib/overlays";
+import { scrollToTarget } from "@/lib/scroll";
+import { ElasticWord } from "./ui/ElasticWord";
 
 /**
- * 00 — The name, as big as the screen allows.
+ * 00 — Not a hero section: an opening title.
  *
- * The first line is fitted to the full width using Archivo's width axis:
- * the font size is capped by the height available, then the letterforms
- * stretch until ABHIRAM spans edge to edge. On scroll the two lines slide
- * apart and the portrait frame (tucked beside REDDY) opens to full-bleed.
+ * A giant ABHI fills the screen with Abhi standing in front of it. The
+ * letters are elastic — they stretch towards your pointer and give way
+ * around it — and the figure and the word drift at two different depths.
+ * Scroll and the word parts like curtains; the caption lands in the gap.
+ * Two ways in from the first screen: Quick look (the 30-second version) or
+ * Explore (everything).
  *
- * A cut-out portrait (transparent background) stands on the stage instead:
- * bottom-anchored, never cropped, and the opening crop centres on its face.
+ * The boot sequence dives in through the zero of "100": the scene rushes up
+ * from that point and the letters burst in, via `boot:reveal`.
  */
-export function Hero({
-  portrait,
-  cutout = false,
-  focus = [50, 50],
-}: {
-  portrait: React.ReactNode;
-  cutout?: boolean;
-  /** Where the face sits in a cut-out, as [x%, y%] of the image. */
-  focus?: [number, number];
-}) {
+export function Hero({ portrait, cutout = false }: { portrait: React.ReactNode; cutout?: boolean }) {
   const root = useRef<HTMLElement>(null);
+  const s = sections.hero;
 
   useGSAP(
     (_ctx, contextSafe) => {
-      const section = root.current!;
-      const q = gsap.utils.selector(section);
+      const q = gsap.utils.selector(root);
       const pin = q("[data-pin]")[0] as HTMLElement;
-      const grid = q("[data-grid]")[0] as HTMLElement;
-      const measure = q("[data-measure]")[0] as HTMLElement;
-      const top = q("[data-area='top']")[0] as HTMLElement;
-      const meta = q("[data-area='meta']")[0] as HTMLElement;
-      const slot = q("[data-slot]")[0] as HTMLElement;
-      const frame = q("[data-frame]")[0] as HTMLElement;
-      const inner = q("[data-frame-inner]")[0] as HTMLElement;
-      const figure = q("[data-figure]")[0] as HTMLElement | undefined;
-      const l1 = q("[data-line='1']")[0] as HTMLElement;
-      const l2 = q("[data-line='2']")[0] as HTMLElement;
-
-      // What the opening crop centres on: the face of a cut-out, otherwise the
-      // middle of the frame. Layout offsets rather than rects, so the frame's
-      // own transforms never feed back into the measurement.
-      const focusPoint = () =>
-        figure
-          ? { x: figure.offsetLeft + (figure.offsetWidth * focus[0]) / 100, y: figure.offsetTop + (figure.offsetHeight * focus[1]) / 100 }
-          : { x: pin.clientWidth / 2, y: pin.clientHeight / 2 };
-      const shift = () => {
-        const p = pin.getBoundingClientRect();
-        const s = slot.getBoundingClientRect();
-        const f = focusPoint();
-        return { x: s.left - p.left + s.width / 2 - f.x, y: s.top - p.top + s.height / 2 - f.y };
-      };
-
-      /* ── Fit the name ─────────────────────────────────────────────── */
-      const setName = (size: number, wdth: number) => {
-        section.style.setProperty("--name-size", `${size.toFixed(2)}px`);
-        section.style.setProperty("--name-wdth", wdth.toFixed(1));
-      };
-      const fit = () => {
-        const W = grid.clientWidth - parseFloat(getComputedStyle(grid).paddingLeft) * 2;
-        const H = grid.clientHeight - parseFloat(getComputedStyle(grid).paddingTop) - parseFloat(getComputedStyle(grid).paddingBottom);
-        const desktop = window.matchMedia("(min-width: 768px) and (min-aspect-ratio: 1/1)").matches;
-        const reserved = top.offsetHeight + meta.offsetHeight + (desktop ? 28 : H * 0.3);
-        let size = Math.max(40, (H - reserved) / (2 * LINE));
-        size = Math.min(size, W * 0.5);
-        setName(size, WDTH_MIN);
-        const narrow = measure.getBoundingClientRect().width;
-        if (narrow >= W) {
-          setName(size * (W / narrow), WDTH_MIN);
-          return;
-        }
-        setName(size, WDTH_MAX);
-        if (measure.getBoundingClientRect().width <= W) return;
-        let lo = WDTH_MIN;
-        let hi = WDTH_MAX;
-        for (let i = 0; i < 10; i++) {
-          const mid = (lo + hi) / 2;
-          setName(size, mid);
-          if (measure.getBoundingClientRect().width > W) hi = mid;
-          else lo = mid;
-        }
-        setName(size, lo);
-      };
-      // The intro zoom settles onto the face, not onto the middle of the frame.
-      const layout = () => {
-        fit();
-        const f = focusPoint();
-        gsap.set(inner, { transformOrigin: `${f.x}px ${f.y}px` });
-      };
-      layout();
-      ScrollTrigger.addEventListener("refreshInit", layout);
-
-      const slotInset = () => {
-        const p = pin.getBoundingClientRect();
-        const s = slot.getBoundingClientRect();
-        return `inset(${(s.top - p.top).toFixed(1)}px ${(p.right - s.right).toFixed(1)}px ${(p.bottom - s.bottom).toFixed(1)}px ${(s.left - p.left).toFixed(1)}px)`;
-      };
-
+      const letters = q("[data-letter]") as HTMLElement[];
+      const half = Math.ceil(letters.length / 2);
+      const left = letters.slice(0, half);
+      const right = letters.slice(half);
       const mm = gsap.matchMedia();
       let playIntro: (() => void) | null = null;
 
-      /* ── Reduced motion: everything in place, nothing moves ───────── */
-      mm.add(REDUCED, () => {
-        const place = () => {
-          gsap.set(frame, { clipPath: slotInset() });
-          gsap.set(q("[data-frame-shift]"), shift());
-        };
-        place();
-        const st = ScrollTrigger.create({ trigger: pin, onRefresh: place });
-        return () => st.kill();
-      });
-
-      /* ── Motion ───────────────────────────────────────────────────── */
       mm.add(MOTION_OK, () => {
-        const caption = q("[data-caption]")[0];
-        gsap.set(caption, { visibility: "visible" });
+        gsap.set(q("[data-caption]"), { visibility: "visible" });
 
-        // Scroll: split the name, open the frame, land the caption.
+        // Scroll: the word parts like curtains, the figure steps forward.
         const tl = gsap.timeline({
           defaults: { ease: "none" },
           scrollTrigger: {
             trigger: pin,
             start: "top top",
-            end: () => `+=${Math.round(window.innerHeight * 1.35)}`,
+            end: () => `+=${Math.round(window.innerHeight * 1.3)}`,
             pin: true,
-            scrub: 0.7,
+            scrub: 0.8,
             invalidateOnRefresh: true,
             anticipatePin: 1,
           },
         });
-        // The media starts centred on the slot (a tight crop) and drifts back
-        // to centre as the frame opens — same ease, so it never under-fills.
-        tl.fromTo(frame, { clipPath: () => slotInset() }, { clipPath: "inset(0px 0px 0px 0px)", ease: "power2.inOut", duration: 1 }, 0)
-          .fromTo(q("[data-frame-shift]"), { x: () => shift().x, y: () => shift().y }, { x: 0, y: 0, ease: "power2.inOut", duration: 1 }, 0)
-          .fromTo(l1, { xPercent: 0, x: 0 }, { xPercent: -32, duration: 1 }, 0)
-          .fromTo(l2, { xPercent: 0, x: 0 }, { xPercent: 32, duration: 1 }, 0)
-          .to([l1, l2], { opacity: 0, duration: 0.4 }, 0.25)
-          .to(q("[data-fade]"), { opacity: 0, y: -24, duration: 0.3 }, 0)
-          .fromTo(q("[data-shade]"), { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0.45)
-          .fromTo(q("[data-caption-line]"), { yPercent: 110, y: 0 }, { yPercent: 0, duration: 0.3, stagger: 0.07, ease: "power3.out" }, 0.62)
-          .fromTo(q("[data-caption-note]"), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.25 }, 0.85);
+        tl.fromTo(left, { xPercent: 0, x: 0, scale: 1 }, { xPercent: (i) => -150 + i * 30, scale: 1.2, duration: 1 }, 0)
+          .fromTo(right, { xPercent: 0, x: 0, scale: 1 }, { xPercent: (i) => 120 + i * 30, scale: 1.2, duration: 1 }, 0)
+          .to(q("[data-word]"), { opacity: 0.14, duration: 0.55 }, 0.3)
+          .fromTo(q("[data-figure-wrap]"), { scale: 1, yPercent: 0 }, { scale: 0.93, yPercent: -3, duration: 1 }, 0)
+          .to(q("[data-rail]"), { opacity: 0, y: -24, duration: 0.3 }, 0)
+          .fromTo(q("[data-shade]"), { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0.4)
+          .fromTo(q("[data-caption-line]"), { yPercent: 110, y: 0 }, { yPercent: 0, duration: 0.3, stagger: 0.07, ease: "power3.out" }, 0.55)
+          .fromTo(q("[data-caption-note]"), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.25 }, 0.8);
 
-        // Arrival: ~1.3s of controlled motion, then out of the way.
+        // Pointer: two depths — the figure drifts against the word.
+        const fx = gsap.quickTo(q("[data-figure-drift]"), "x", { duration: 1.1, ease: "power3" });
+        const fy = gsap.quickTo(q("[data-figure-drift]"), "y", { duration: 1.1, ease: "power3" });
+        const wx = gsap.quickTo(q("[data-word-drift]"), "x", { duration: 1.4, ease: "power3" });
+        const wy = gsap.quickTo(q("[data-word-drift]"), "y", { duration: 1.4, ease: "power3" });
+        const onMove = (e: PointerEvent) => {
+          if (e.pointerType !== "mouse" || window.scrollY > window.innerHeight * 1.6) return;
+          const nx = e.clientX / window.innerWidth - 0.5;
+          const ny = e.clientY / window.innerHeight - 0.5;
+          fx(-nx * 22);
+          fy(-ny * 12);
+          wx(nx * 12);
+          wy(ny * 8);
+        };
+        window.addEventListener("pointermove", onMove, { passive: true });
+
+        // Arrival. Thrown in through the loader's zero, the whole scene rushes
+        // up from the point the dive went through and the letters burst in;
+        // on an ordinary visit, the letters simply rise.
         playIntro = contextSafe!(() => {
-          gsap
-            .timeline({ defaults: { ease: "expo.out" } })
-            .fromTo(q("[data-line='1'] [data-char]"), { yPercent: 105, y: 0 }, { yPercent: 0, duration: 1.15, stagger: 0.045 }, 0)
-            .fromTo(q("[data-line='2'] [data-char]"), { yPercent: 105, y: 0 }, { yPercent: 0, duration: 1.15, stagger: 0.045 }, 0.12)
-            .fromTo(q("[data-shutter]"), { scaleY: 1 }, { scaleY: 0, duration: 1.1, ease: "expo.inOut" }, 0.3)
-            .fromTo(q("[data-frame-inner]"), { scale: 1.35 }, { scale: 1, duration: 1.8 }, 0.3)
-            .fromTo(q("[data-intro]"), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.9, stagger: 0.05 }, 0.55);
+          const html = document.documentElement;
+          const origin = html.dataset.bootOrigin;
+          delete html.dataset.bootOrigin;
+          const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
+          if (origin) {
+            const [ox, oy] = origin.split(" ").map(Number);
+            const box = pin.getBoundingClientRect();
+            tl.fromTo(q("[data-stage]"), { scale: 0.7, transformOrigin: `${ox - box.left}px ${oy - box.top}px` }, { scale: 1, duration: 1.5 }, 0)
+              .fromTo(letters, { yPercent: 85, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 1.05, stagger: 0.06, ease: "back.out(1.6)" }, 0.1)
+              .fromTo(q("[data-figure-intro]"), { opacity: 0, scale: 1.1, yPercent: 5 }, { opacity: 1, scale: 1, yPercent: 0, duration: 1.3 }, 0.05)
+              .fromTo(q("[data-glow]"), { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1.3, duration: 0.45, ease: "power2.out" }, 0.2)
+              .to(q("[data-glow]"), { scale: 1, duration: 1.2 }, 0.65)
+              .fromTo(q("[data-intro]"), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.9, stagger: 0.05 }, 0.65);
+          } else {
+            tl.fromTo(letters, { yPercent: 115, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 1.3, stagger: 0.07 }, 0)
+              .fromTo(q("[data-figure-intro]"), { opacity: 0, scale: 1.08, yPercent: 4 }, { opacity: 1, scale: 1, yPercent: 0, duration: 1.6 }, 0.2)
+              .fromTo(q("[data-intro]"), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.9, stagger: 0.05 }, 0.6);
+          }
         });
 
         return () => {
           tl.kill();
+          window.removeEventListener("pointermove", onMove);
           playIntro = null;
         };
       });
 
-      // Once the type has loaded, fit the name for real and tell the preloader
-      // the first screen is laid out. The intro plays as the preloader opens,
+      // Once the type has loaded, re-measure and tell the preloader the
+      // first screen is laid out. The intro plays as the preloader opens,
       // or straight away when there isn't one.
       let disposed = false;
       let cancelIntro = () => {};
@@ -189,7 +117,6 @@ export function Hero({
       fontsReady.then(
         contextSafe!(() => {
           if (disposed) return;
-          layout();
           ScrollTrigger.refresh();
           document.documentElement.dataset.heroReady = "";
           window.dispatchEvent(new Event("hero:ready"));
@@ -201,7 +128,6 @@ export function Hero({
         disposed = true;
         cancelIntro();
         delete document.documentElement.dataset.heroReady;
-        ScrollTrigger.removeEventListener("refreshInit", layout);
       };
     },
     { scope: root },
@@ -210,11 +136,12 @@ export function Hero({
   return (
     <section
       ref={root}
-      id="top"
+      id={s.id}
       className="hero relative"
       data-theme="ink"
-      data-index={sections.hero.index}
-      data-label={sections.hero.label}
+      data-index={s.index}
+      data-label={s.label}
+      data-phase={s.phase}
       aria-labelledby="hero-title"
     >
       <h1 id="hero-title" className="sr-only">
@@ -222,80 +149,85 @@ export function Hero({
       </h1>
 
       <div data-pin className="relative h-svh min-h-[560px] overflow-hidden">
-        {/* The portrait frame. Clipped to the slot beside REDDY until scroll opens it. */}
-        <div data-frame className="pointer-events-none absolute inset-0 z-0">
-          <div data-frame-shift className="absolute inset-0 will-change-transform">
-            <div data-frame-inner className="absolute inset-0 will-change-transform">
+        <div data-stage className="absolute inset-0">
+        {/* 1 · The word, behind everything. */}
+        <div data-word className="hero-word absolute inset-x-0">
+          <div data-word-drift className="h-full">
+            <ElasticWord text={hero.word} className="h-full px-gutter" heightRatio={0.8} />
+          </div>
+        </div>
+
+        {/* 2 · The figure, in front of the word. */}
+        <div data-figure-wrap className="pointer-events-none absolute inset-0 z-10">
+          <div data-figure-drift className="absolute inset-0">
+            <div data-figure-intro className="absolute inset-0 flex items-end justify-center">
               {cutout ? (
-                <div className="absolute inset-0 flex items-end justify-center">
-                  <div data-figure className="hero-figure relative shrink-0">
-                    <span aria-hidden className="hero-figure-glow absolute" />
-                    {portrait}
-                  </div>
+                <div className="hero-figure relative shrink-0">
+                  <span data-glow aria-hidden className="hero-figure-glow absolute" />
+                  {portrait}
                 </div>
               ) : (
-                portrait
+                <div className="absolute inset-0 opacity-60">{portrait}</div>
               )}
             </div>
           </div>
+          <div aria-hidden className="hero-scrim absolute inset-0" />
           <div
             data-shade
+            aria-hidden
             className="absolute inset-0 opacity-0"
-            style={{
-              background:
-                "linear-gradient(to top, rgb(11 11 10 / 0.88), rgb(11 11 10 / 0.15) 55%, rgb(11 11 10 / 0.45))",
-            }}
+            style={{ background: "linear-gradient(to top, rgb(11 11 10 / 0.9), rgb(11 11 10 / 0.2) 55%, rgb(11 11 10 / 0.5))" }}
           />
         </div>
 
-        <div data-grid className="hero-grid relative z-10 gap-x-4 px-gutter pb-4 pt-[calc(var(--nav-h)+10px)] md:gap-x-5 md:pb-5">
-          <div data-area="top" data-fade className="flex flex-col gap-3 pb-3 md:flex-row md:items-start md:justify-between md:gap-10 md:pb-4">
-            <p data-intro className="label flex items-center gap-3">
-              <span className="inline-block h-2 w-2 bg-accent" aria-hidden />
-              {hero.kicker}
-            </p>
-            <p data-intro className="max-w-[36ch] text-[15px] leading-snug text-fg/85 md:text-right md:text-base">
+        </div>
+
+        {/* 3 · The rails: who, and two ways in. */}
+        <div className="relative z-20 flex h-full flex-col justify-between px-gutter pb-4 pt-[calc(var(--nav-h)+10px)] md:pb-5">
+          <div data-rail className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-10">
+            <div data-intro className="label flex flex-col gap-1.5">
+              <span className="flex items-center gap-3">
+                <span aria-hidden className="inline-block h-2 w-2 bg-accent" />
+                {hero.kicker}
+              </span>
+              <span className="text-muted">{hero.name}</span>
+            </div>
+            <p data-intro className="hidden max-w-[36ch] text-[15px] leading-snug text-fg/85 sm:block md:text-right md:text-base">
               {hero.intro}
             </p>
           </div>
 
-          <div data-area="slot" data-slot className="relative my-3 min-h-0 land:my-0 land:mb-[0.02em]">
-            <div data-shutter className="absolute inset-0 hidden origin-top bg-bg" />
-
-          </div>
-
-          <div data-area="l1" data-line="1" aria-hidden className="hero-name display">
-            <span className="mask">
-              <span data-measure className="inline-block">
-                <Chars text={hero.lines[0]} />
-              </span>
-            </span>
-          </div>
-
-          <div data-area="l2" data-line="2" aria-hidden className="hero-name display land:justify-self-end">
-            <span className="mask">
-              <Chars text={hero.lines[1]} />
-            </span>
-          </div>
-
-          <div data-area="meta" data-fade className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line pt-3 md:mt-4 md:grid-cols-5">
-            {hero.meta.map((m) => (
-              <div key={m.k} data-intro className="label">
-                <span className="block text-muted">{m.k}</span>
-                <span className={`block normal-case tracking-normal text-[13px] ${m.accent ? "text-accent" : "text-fg"}`}>{m.v}</span>
-              </div>
-            ))}
-            <div data-intro className="label flex items-end justify-between gap-3 md:justify-end">
-              <span className="text-muted">Scroll</span>
-              <span aria-hidden className="relative block h-8 w-px overflow-hidden bg-line">
-                <span className="absolute inset-x-0 top-0 h-3 animate-[cue_1.8s_var(--ease-expo)_infinite] bg-accent" />
-              </span>
+          <div data-rail className="flex flex-col gap-4 border-t border-line pt-3 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 md:grid-cols-4 lg:max-w-[64rem] lg:flex-1">
+              {hero.meta.map((m) => (
+                <div key={m.k} data-intro className="label">
+                  <dt className="text-muted">{m.k}</dt>
+                  <dd className={`normal-case tracking-normal text-[13px] ${m.accent ? "text-accent" : "text-fg"}`}>{m.v}</dd>
+                </div>
+              ))}
+            </dl>
+            <div data-intro className="flex shrink-0 gap-2">
+              <button
+                type="button"
+                onClick={() => overlays.open("quickLook")}
+                className="label group inline-flex items-center gap-2 bg-accent px-4 py-3 text-bg"
+              >
+                {hero.paths.fast} <span className="arrow-nudge-x">→</span>
+                <kbd className="ml-1 hidden border border-bg/40 px-1 text-[10px] md:inline">Q</kbd>
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToTarget(`#${sections.short.id}`)}
+                className="label group inline-flex items-center gap-2 border border-line px-4 py-3 transition-colors hover:border-fg"
+              >
+                {hero.paths.deep} <span className="arrow-nudge-x">↓</span>
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Lands over the open frame. */}
-        <div data-caption className="invisible absolute inset-x-0 bottom-0 z-20 flex flex-col gap-6 px-gutter pb-[7vh] md:flex-row md:items-end md:justify-between">
+        {/* 4 · Lands in the gap as the word parts. */}
+        <div data-caption className="invisible absolute inset-x-0 bottom-0 z-30 flex flex-col gap-6 px-gutter pb-[7vh] md:flex-row md:items-end md:justify-between">
           <p className="display text-[clamp(64px,13vw,240px)] text-paper">
             {hero.caption.lines.map((line, i) => (
               <span key={line} className="mask">

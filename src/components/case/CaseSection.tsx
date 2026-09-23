@@ -15,7 +15,7 @@ export function CaseSection({
 }: {
   n: string;
   title: string;
-  theme: "ink" | "paper" | "garage";
+  theme: "ink" | "paper" | "garage" | "ir";
   children: React.ReactNode;
   className?: string;
   /** Anchor, e.g. "under-the-hood". */

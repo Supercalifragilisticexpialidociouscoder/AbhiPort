@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { club, community, sections } from "@/content/site";
+import { club, communityDoor, sections } from "@/content/site";
 import { gsap, useGSAP, MOTION_OK } from "@/lib/gsap";
 import { pad } from "@/lib/cn";
 import { TransitionLink } from "./PageTransition";
@@ -12,8 +12,8 @@ import { Ecosystem } from "./visuals/Ecosystem";
 /**
  * 05 — Community. Club Infin8 as a real organisation, not an
  * "extracurriculars" bullet: the scale, the eight-club structure, the role,
- * and the thread back to the software built for it. Then the wider
- * community and learning — certificates deliberately last and smallest.
+ * and the thread back to the software built for it. Then one door: the
+ * wider community and learning live on /community.
  */
 export function Community() {
   const root = useRef<HTMLElement>(null);
@@ -208,42 +208,35 @@ export function Community() {
           <span className="grid h-12 w-12 place-items-center rounded-full border border-line transition-colors group-hover:border-accent group-hover:bg-accent group-hover:text-bg">
             <span className="arrow-nudge-x">→</span>
           </span>
-          <span className="display text-[clamp(26px,2.4vw,40px)]">The full Club Infin8 story</span>
+          <span className="display text-[clamp(26px,2.4vw,40px)]">Enter the ecosystem</span>
         </TransitionLink>
       </div>
 
-      {/* Community & learning */}
-      <div className="mt-20 grid gap-10 lg:grid-cols-12 lg:gap-6">
-        <div className="lg:col-span-4">
-          <h3 className="display text-[clamp(40px,4vw,72px)]">{community.title}</h3>
-          <p className="mt-4 max-w-sm text-[17px] leading-snug text-muted">{community.lead}</p>
-        </div>
-        <div className="lg:col-span-8">
-          <ul className="border-t border-fg">
-            {community.items.map((it) => (
-              <li key={it.name} className="grid gap-2 border-b border-line py-5 md:grid-cols-[1fr_9rem_1.2fr] md:items-baseline md:gap-6">
-                <span className="display text-[clamp(26px,2.4vw,40px)] leading-[0.95]">{it.name}</span>
-                <span className="label text-accent">{it.kind}</span>
-                <span className="text-[15px] text-muted">{it.note}</span>
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-10">
-            <p className="label flex items-center justify-between gap-4 text-muted">
-              <span>The paperwork</span>
-              <span>Secondary, as it should be</span>
-            </p>
-            <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t border-line pt-3">
-              {community.certificates.map((c) => (
-                <li key={c} className="label">
-                  {c}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
+      {/* The door: community & learning lives on its own page */}
+      <TransitionLink
+        href="/community"
+        transitionLabel="Community"
+        data-cursor="Open"
+        className="group mt-20 grid gap-6 border-y border-fg py-8 md:grid-cols-12 md:items-end md:gap-6"
+      >
+        <span className="display text-[clamp(40px,5.4vw,104px)] leading-[0.86] md:col-span-8">
+          {communityDoor.label}
+          <span className="arrow-nudge-x ml-[0.15em] text-accent">→</span>
+        </span>
+        <span className="flex flex-col gap-3 md:col-span-4 md:pb-2">
+          <span className="text-[16px] leading-snug text-muted">{communityDoor.note}</span>
+          <span className="label flex gap-4">
+            <span className="text-accent">/community</span>
+            <span className="text-muted">Hackathons · events · workshops · 2× SIH</span>
+          </span>
+        </span>
+      </TransitionLink>
+      <p className="label mt-4 flex justify-end">
+        <TransitionLink href="/credentials" transitionLabel="Credentials" className="group inline-flex items-center gap-2 text-muted hover:text-fg">
+          <span className="link-line">And the paperwork: credentials</span>
+          <span className="arrow-nudge-x text-accent">→</span>
+        </TransitionLink>
+      </p>
     </section>
   );
 }

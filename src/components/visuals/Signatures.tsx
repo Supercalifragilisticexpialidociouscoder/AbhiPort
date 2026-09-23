@@ -16,6 +16,18 @@ export function Signature({ project, className }: { project: Project; className?
       return <CommitGate className={className} />;
     case "pixels":
       return <TrustFigure className={className} />;
+    case "feed":
+      return <PostFeed className={className} />;
+    case "calendar":
+      return <ReadinessCalendar className={className} />;
+    case "mentor":
+      return <MentorPanel className={className} />;
+    case "corridors":
+      return <CorridorMap className={className} />;
+    case "scan":
+      return <RoomScan className={className} />;
+    default:
+      return null;
   }
 }
 
@@ -201,5 +213,222 @@ export function TrustFigure({ className }: { className?: string }) {
         <span className="text-accent">■ Don&apos;t trust these pixels</span>
       </p>
     </div>
+  );
+}
+
+/* ── 04 · SocialGuard — posts, labelled with reasons ─────────────────── */
+
+const POSTS: { handle: string; text: string; label: "Genuine" | "Bot" | "Suspicious"; why: string }[] = [
+  { handle: "@account_01", text: "Enjoying the sunshine today with friends.", label: "Genuine", why: "no signals" },
+  { handle: "@account_02", text: "WIN a FREE prize!!! click → link", label: "Suspicious", why: "1 URL · spam words · punctuation" },
+  { handle: "@account_03", text: "follow follow follow for follow back", label: "Bot", why: "repetitive text" },
+  { handle: "@account_04", text: "Notes from today's workshop, thread below.", label: "Genuine", why: "no signals" },
+];
+
+export function PostFeed({ className }: { className?: string }) {
+  return (
+    <Frame title="Post analysis" aside="Illustration" className={className}>
+      <ul className="mt-5 flex flex-1 flex-col justify-between gap-2">
+        {POSTS.map((p, i) => (
+          <li key={p.handle} className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 border-b border-line pb-3" style={{ transitionDelay: `${i * 90}ms` }}>
+            <span className="label text-muted">{p.handle}</span>
+            <span
+              className={cn(
+                "label row-span-2 border px-2 py-1 text-center transition-colors duration-500",
+                p.label === "Genuine" ? "border-line text-muted" : "border-accent text-accent group-hover:bg-accent group-hover:text-bg",
+              )}
+            >
+              {p.label}
+            </span>
+            <span className="truncate text-[15px]">{p.text}</span>
+            <span className="label col-span-2 text-[10px] text-muted">Why: {p.why}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="label mt-4 flex justify-between gap-4 text-muted">
+        <span>Rules first · model second</span>
+        <span className="text-accent">SIH1775</span>
+      </p>
+    </Frame>
+  );
+}
+
+/* ── 05 · Infin8 Calendar — a month, with readiness ──────────────────── */
+
+export function ReadinessCalendar({ className }: { className?: string }) {
+  const events: Record<number, { t: string; warn?: boolean }> = {
+    3: { t: "Workshop" },
+    9: { t: "Deadline" },
+    12: { t: "Club fair" },
+    16: { t: "Seminar", warn: true },
+    22: { t: "Hackathon" },
+    27: { t: "Meeting" },
+  };
+  const today = 16;
+  return (
+    <Frame title="This month" aside="Illustration" className={className}>
+      <div className="label mt-4 grid grid-cols-7 gap-px text-center text-[10px] text-muted">
+        {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+          <span key={i} className="pb-1">
+            {d}
+          </span>
+        ))}
+      </div>
+      <ol className="grid flex-1 grid-cols-7 gap-px border border-line bg-line">
+        {Array.from({ length: 35 }, (_, i) => {
+          const day = i - 1;
+          const ev = events[day];
+          const inMonth = day >= 1 && day <= 30;
+          return (
+            <li key={i} className="relative min-h-[34px] bg-bg p-1">
+              <span className={cn("label text-[10px]", day === today ? "text-accent" : "text-muted")}>{inMonth ? day : ""}</span>
+              {day === today ? <span aria-hidden className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-accent" /> : null}
+              {ev ? (
+                <span className={cn("label mt-0.5 block truncate border-l-2 pl-1 text-[9px]", ev.warn ? "border-accent text-accent" : "border-fg/60 text-fg")}>{ev.t}</span>
+              ) : null}
+            </li>
+          );
+        })}
+      </ol>
+      <div className="mt-4 grid grid-cols-[auto_1fr_auto] items-center gap-3">
+        <span className="label text-muted">Readiness</span>
+        <span className="relative h-1 bg-line">
+          <span className="absolute inset-y-0 left-0 w-4/5 origin-left bg-fg transition-transform duration-700 group-hover:scale-x-[1.25]" />
+        </span>
+        <span className="label tnum">4 / 5</span>
+      </div>
+      <p className="label mt-3 text-accent">⚠ Venue already booked at this hour — warning, not a block</p>
+    </Frame>
+  );
+}
+
+/* ── 06 · Project Grit — a mentor that asks instead of answering ─────── */
+
+export function MentorPanel({ className }: { className?: string }) {
+  return (
+    <Frame title="Project Grit · sidebar" aside="Illustration" className={className}>
+      <div className="mt-4 grid grid-cols-4 border border-line">
+        {["Analyze", "Debug", "Improve", "Evaluate"].map((m, i) => (
+          <span key={m} className={cn("label border-r border-line py-2 text-center text-[10px] last:border-r-0", i === 1 ? "bg-accent text-bg" : "text-muted")}>
+            {m}
+          </span>
+        ))}
+      </div>
+      <pre className="mt-4 overflow-hidden border-l-2 border-line pl-3 font-mono text-[12px] leading-relaxed text-muted">
+        {`for (let i = 0; i <= items.length; i++) {
+  total += items[i].price;
+}`}
+      </pre>
+      <div className="mt-4 flex-1 space-y-3 text-[14px] leading-snug">
+        <p>
+          <span className="label mr-2 text-accent">Grit</span>What happens on the last pass of this loop?
+        </p>
+        <p className="text-muted transition-colors duration-500 group-hover:text-fg">
+          <span className="label mr-2">Hint</span>Compare the condition with the last valid index. Don&apos;t fix it yet — say what breaks first.
+        </p>
+      </div>
+      <p className="label mt-4 flex justify-between gap-4 border-t border-line pt-3 text-muted">
+        <span>Root cause first</span>
+        <span>No answers handed over</span>
+      </p>
+    </Frame>
+  );
+}
+
+/* ── 07 · TerraMatch Nexus — risk queue → cities ─────────────────────── */
+
+export function CorridorMap({ className }: { className?: string }) {
+  const people = [
+    { y: 40, r: "CRIT" },
+    { y: 95, r: "HIGH" },
+    { y: 150, r: "HIGH" },
+    { y: 205, r: "MED" },
+  ];
+  const cities = [
+    { y: 60, n: "City A" },
+    { y: 130, n: "City B" },
+    { y: 195, n: "City C" },
+  ];
+  const links: [number, number][] = [
+    [0, 1],
+    [1, 0],
+    [2, 2],
+    [3, 1],
+  ];
+  return (
+    <Frame title="Matching engine" aside="Sample data" className={className}>
+      <svg viewBox="0 0 300 240" className="mt-3 w-full flex-1" role="img" aria-label="Illustration: people queued by risk, matched to receiving cities">
+        {links.map(([a, b], i) => (
+          <path
+            key={i}
+            d={`M70 ${people[a].y} C150 ${people[a].y}, 150 ${cities[b].y}, 230 ${cities[b].y}`}
+            fill="none"
+            stroke={i === 0 ? "var(--accent)" : "var(--fg)"}
+            strokeWidth={i === 0 ? 2 : 1}
+            opacity={i === 0 ? 1 : 0.45}
+            strokeDasharray={i === 0 ? undefined : "3 4"}
+          />
+        ))}
+        {people.map((p, i) => (
+          <g key={i}>
+            <rect x="14" y={p.y - 12} width="56" height="24" fill="var(--bg)" stroke={i === 0 ? "var(--accent)" : "var(--line)"} />
+            <text x="42" y={p.y + 4} textAnchor="middle" fill={i === 0 ? "var(--accent)" : "var(--muted)"} style={{ font: "500 9px var(--font-geist-mono), monospace" }}>
+              {String(i + 1).padStart(2, "0")} · {p.r}
+            </text>
+          </g>
+        ))}
+        {cities.map((c) => (
+          <g key={c.n}>
+            <circle cx="236" cy={c.y} r="6" fill="var(--bg)" stroke="var(--fg)" strokeWidth="1.5" />
+            <text x="250" y={c.y + 3} fill="var(--fg)" style={{ font: "500 9px var(--font-geist-mono), monospace" }}>
+              {c.n}
+            </text>
+          </g>
+        ))}
+      </svg>
+      <p className="label mt-3 flex justify-between gap-4 border-t border-line pt-3 text-muted">
+        <span>Highest risk first → best available city</span>
+        <span className="text-accent">Greedy</span>
+      </p>
+    </Frame>
+  );
+}
+
+/* ── 08 · HaKit — a room, as the camera sees it ──────────────────────── */
+
+export function RoomScan({ className }: { className?: string }) {
+  const boxes = [
+    { x: 30, y: 120, w: 70, h: 60, l: "table 0.78" },
+    { x: 130, y: 95, w: 34, h: 70, l: "person 0.91", hot: true },
+    { x: 190, y: 138, w: 40, h: 40, l: "chair 0.83" },
+  ];
+  return (
+    <Frame title="Scan · live" aside="Illustration" className={className}>
+      <svg viewBox="0 0 260 210" className="mt-3 w-full flex-1" role="img" aria-label="Illustration: object detection boxes over a room, with exits marked">
+        <rect x="8" y="8" width="244" height="194" fill="none" stroke="var(--line)" />
+        <path d="M8 60 H22 M8 90 H22" stroke="var(--accent)" strokeWidth="3" />
+        <text x="26" y="78" fill="var(--accent)" style={{ font: "500 8px var(--font-geist-mono), monospace" }}>
+          EXIT · OBSERVED
+        </text>
+        <path d="M252 150 H238 M252 180 H238" stroke="var(--fg)" strokeWidth="3" opacity="0.6" />
+        <text x="178" y="198" fill="var(--muted)" style={{ font: "500 8px var(--font-geist-mono), monospace" }}>
+          EXIT · UNKNOWN
+        </text>
+        {boxes.map((b) => (
+          <g key={b.l}>
+            <rect x={b.x} y={b.y} width={b.w} height={b.h} fill="none" stroke={b.hot ? "var(--accent)" : "var(--fg)"} strokeWidth="1.2" />
+            <rect x={b.x} y={b.y - 12} width={b.l.length * 5.2 + 6} height="11" fill={b.hot ? "var(--accent)" : "var(--fg)"} />
+            <text x={b.x + 3} y={b.y - 3.5} fill="var(--bg)" style={{ font: "600 8px var(--font-geist-mono), monospace" }}>
+              {b.l}
+            </text>
+          </g>
+        ))}
+        <line x1="8" x2="252" y1="40" y2="40" stroke="var(--accent)" strokeWidth="1" opacity="0.5" className="motion-safe:animate-pulse" />
+      </svg>
+      <p className="label mt-3 flex justify-between gap-4 border-t border-line pt-3 text-muted">
+        <span>Every value has a source</span>
+        <span className="text-accent">What if +50 people?</span>
+      </p>
+    </Frame>
   );
 }

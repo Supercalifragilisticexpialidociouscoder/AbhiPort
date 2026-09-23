@@ -1,44 +1,34 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { garage, sections, type Part } from "@/content/site";
+import { labEntries } from "@/content/lab";
 import { gsap, useGSAP, MOTION_OK } from "@/lib/gsap";
 import { cn, pad } from "@/lib/cn";
+import { TransitionLink } from "./PageTransition";
+import { LabIndex } from "./lab/LabIndex";
 import { SectionHead } from "./ui/SectionHead";
-import { StatusChip } from "./ui/StatusChip";
 import { ImuScope } from "./visuals/ImuScope";
-import { LeanDial } from "./visuals/LeanDial";
 import { PartGlyph } from "./visuals/PartGlyph";
 
-type BinKey = keyof typeof garage.bins;
-const BINS: { key: BinKey; label: string }[] = [
-  { key: "hardware", label: "Hardware" },
-  { key: "software", label: "Software" },
-  { key: "creative", label: "Creative" },
-];
-
 /**
- * 07 — The Garage: the hardware lab. Telemetry mode — grid paper, crosshair
- * cursor, a live sensor trace, a parts bin you can rummage through, and a
- * prototype on the bench with its (honest) build story. Every number here
- * is counted from content.
+ * 07 — The Garage: the physical side. Telemetry mode — grid paper,
+ * crosshair cursor, a live sensor trace and a parts bin you can rummage
+ * through. Then the lab index: one prototype and nine experiments, each a
+ * door to its own page. Every number here is counted from content.
  */
 export function Lab() {
   const root = useRef<HTMLElement>(null);
-  const [bin, setBin] = useState<BinKey>("hardware");
   const [active, setActive] = useState(0);
-  const tabsId = useId();
   const s = sections.garage;
-  const parts: Part[] = garage.bins[bin];
+  const parts: Part[] = garage.parts;
   const part = parts[Math.min(active, parts.length - 1)];
-  const hw = garage.bins.hardware;
-  const bench = garage.bench[0];
 
   const stats = [
-    { n: hw.length, k: "Parts on the bench" },
-    { n: hw.filter((p) => p.kind === "Microcontroller").length, k: "Microcontroller families" },
-    { n: hw.filter((p) => ["IMU", "Distance", "Detection"].includes(p.kind)).length, k: "Sensor types" },
-    { n: garage.bench.length, k: "Prototype on the bench" },
+    { n: parts.length, k: "Parts on the bench" },
+    { n: parts.filter((p) => p.kind === "Microcontroller").length, k: "Microcontroller families" },
+    { n: parts.filter((p) => ["IMU", "Distance", "Detection"].includes(p.kind)).length, k: "Sensor types" },
+    { n: labEntries.length, k: "Builds filed in the lab" },
   ];
 
   useGSAP(
@@ -75,15 +65,6 @@ export function Lab() {
     { scope: root },
   );
 
-  const onTabKey = (e: React.KeyboardEvent, i: number) => {
-    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-    e.preventDefault();
-    const next = (i + (e.key === "ArrowRight" ? 1 : -1) + BINS.length) % BINS.length;
-    setBin(BINS[next].key);
-    setActive(0);
-    document.getElementById(`${tabsId}-tab-${next}`)?.focus();
-  };
-
   return (
     <section
       ref={root}
@@ -96,7 +77,7 @@ export function Lab() {
     >
       <SectionHead
         index={s.index}
-        title="The Garage — hardware lab"
+        title="The Garage — the physical side"
         aside={
           <span className="flex items-center gap-2">
             <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" /> Telemetry mode
@@ -137,104 +118,64 @@ export function Lab() {
           <ImuScope />
         </div>
 
-        {/* Parts bin */}
+        {/* Parts bin — the hardware on the bench */}
         <div className="flex flex-col border border-line lg:col-span-5">
-          <div role="tablist" aria-label="Parts bin" className="grid grid-cols-3 border-b border-line">
-            {BINS.map((b, i) => (
-              <button
-                key={b.key}
-                id={`${tabsId}-tab-${i}`}
-                role="tab"
-                type="button"
-                aria-selected={bin === b.key}
-                aria-controls={`${tabsId}-panel`}
-                tabIndex={bin === b.key ? 0 : -1}
-                onClick={() => {
-                  setBin(b.key);
-                  setActive(0);
-                }}
-                onKeyDown={(e) => onTabKey(e, i)}
-                className={cn(
-                  "label relative border-r border-line px-3 py-3 text-left transition-colors last:border-r-0",
-                  bin === b.key ? "text-fg" : "text-muted hover:text-fg",
-                )}
-              >
-                <span className="tnum mr-2 text-accent">{pad(garage.bins[b.key].length)}</span>
-                {b.label}
-                {bin === b.key ? <span aria-hidden className="absolute inset-x-0 -bottom-px h-[2px] bg-accent" /> : null}
-              </button>
+          <p className="label flex items-center justify-between border-b border-line px-4 py-3">
+            <span>
+              <span className="tnum mr-2 text-accent">{pad(parts.length)}</span>Parts bin
+            </span>
+            <span className="text-muted">Hover a part</span>
+          </p>
+
+          <ul className="flex-1">
+            {parts.map((p, i) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  aria-pressed={i === active}
+                  onMouseEnter={() => setActive(i)}
+                  onFocus={() => setActive(i)}
+                  onClick={() => setActive(i)}
+                  className={cn(
+                    "group grid w-full grid-cols-[3.5rem_1fr_auto] items-baseline gap-3 border-b border-line px-4 py-2 text-left transition-colors",
+                    i === active ? "bg-fg/[0.06]" : "hover:bg-fg/[0.03]",
+                  )}
+                >
+                  <span className={cn("label tnum", i === active ? "text-accent" : "text-muted")}>{p.id}</span>
+                  <span className="text-[15px] font-medium">{p.name}</span>
+                  <span className="label text-muted">{p.kind}</span>
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
 
-          <div id={`${tabsId}-panel`} role="tabpanel" aria-labelledby={`${tabsId}-tab-${BINS.findIndex((b) => b.key === bin)}`} className="flex flex-1 flex-col">
-            <ul className="flex-1">
-              {parts.map((p, i) => (
-                <li key={p.id}>
-                  <button
-                    type="button"
-                    aria-pressed={i === active}
-                    onMouseEnter={() => setActive(i)}
-                    onFocus={() => setActive(i)}
-                    onClick={() => setActive(i)}
-                    className={cn(
-                      "group grid w-full grid-cols-[3.5rem_1fr_auto] items-baseline gap-3 border-b border-line px-4 py-2 text-left transition-colors",
-                      i === active ? "bg-fg/[0.06]" : "hover:bg-fg/[0.03]",
-                    )}
-                  >
-                    <span className={cn("label tnum", i === active ? "text-accent" : "text-muted")}>{p.id}</span>
-                    <span className="text-[15px] font-medium">{p.name}</span>
-                    <span className="label text-muted">{p.kind}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-
-            {/* Datasheet for the selected part */}
-            <div className="grid grid-cols-[88px_1fr] gap-4 border-t border-line p-4">
-              <PartGlyph name={part.glyph} label={part.spec} className="h-[88px] w-[88px] text-fg" />
-              <div className="min-w-0">
-                <p className="label text-muted">
-                  Datasheet · <span className="text-accent">{part.id}</span>
-                </p>
-                <p className="mt-1 text-[17px] font-medium leading-tight">{part.line}</p>
-                {part.glyph !== "mono" ? <p className="label mt-2 normal-case tracking-normal text-[12px] text-muted">{part.spec}</p> : null}
-              </div>
+          {/* Datasheet for the selected part */}
+          <div className="grid grid-cols-[88px_1fr] gap-4 border-t border-line p-4">
+            <PartGlyph name={part.glyph} label={part.spec} className="h-[88px] w-[88px] text-fg" />
+            <div className="min-w-0">
+              <p className="label text-muted">
+                Datasheet · <span className="text-accent">{part.id}</span>
+              </p>
+              <p className="mt-1 text-[17px] font-medium leading-tight">{part.line}</p>
+              <p className="label mt-2 normal-case tracking-normal text-[12px] text-muted">{part.spec}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* On the bench */}
-      {bench ? (
-        <article id="bench" aria-labelledby="bench-title" className="mt-20 scroll-mt-24">
-          <div className="label flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-fg pb-3">
-            <span className="tnum text-accent">Bench / {bench.id.replace("B-", "")}</span>
-            <span>On the bench</span>
-            <span className="ml-auto">
-              <StatusChip status="Prototype" />
-            </span>
-          </div>
-          <div className="mt-8 grid gap-8 lg:grid-cols-12 lg:gap-6">
-            <h3 id="bench-title" className="display text-[clamp(48px,6.4vw,124px)] lg:col-span-7">
-              {bench.title}
-            </h3>
-            <div className="self-end lg:col-span-5">
-              <p className="text-[clamp(18px,1.4vw,22px)] leading-snug">{bench.summary}</p>
-              <p className="label mt-4 text-accent">{bench.disclaimer}</p>
-              <ul className="mt-5 flex flex-wrap gap-1.5">
-                {bench.parts.map((x) => (
-                  <li key={x} className="label border border-line px-2.5 py-1.5">
-                    {x}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <div className="mt-12">
-            <LeanDial story={bench.story} />
-          </div>
-        </article>
-      ) : null}
+      {/* The lab: every build gets its own page */}
+      <div id="lab" className="mt-20 scroll-mt-24">
+        <div className="label flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-fg pb-3">
+          <span className="tnum text-accent">({s.index}.1)</span>
+          <span>{garage.index.title}</span>
+          <span className="text-muted">{garage.index.note}</span>
+          <TransitionLink href="/lab" transitionLabel="The lab" className="group ml-auto inline-flex items-center gap-2">
+            <span className="link-line">Enter the lab</span>
+            <span className="arrow-nudge-x text-accent">→</span>
+          </TransitionLink>
+        </div>
+        <LabIndex className="mt-6" />
+      </div>
     </section>
   );
 }

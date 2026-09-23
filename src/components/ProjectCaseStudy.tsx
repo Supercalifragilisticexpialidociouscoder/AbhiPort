@@ -1,5 +1,5 @@
 import type { CaseStudy, Project } from "@/content/projects";
-import { caseStudies, getNextProject } from "@/content/projects";
+import { getNextProject, projectPages } from "@/content/projects";
 import { pad } from "@/lib/cn";
 import { CaseHero } from "./case/CaseHero";
 import { CaseSection } from "./case/CaseSection";
@@ -11,6 +11,8 @@ import { Media } from "./ui/Media";
 import { Known, Ph } from "./ui/Ph";
 import { Reveal } from "./ui/Reveal";
 import { Signature } from "./visuals/Signatures";
+import { World } from "./work/worlds";
+import { hasWorld } from "./work/worlds/slugs";
 
 /**
  * A full case study (or research note) generated from one entry in
@@ -193,11 +195,11 @@ export function ProjectCaseStudy({ project: p }: { project: Project & { study: C
       <CaseSection n={idx()} title={L.hood} theme="garage" id="under-the-hood">
         <UnderTheHood hood={study.underTheHood} title={p.title} />
         <Reveal className="mt-14 grid gap-6 lg:grid-cols-2">
-          <div className="min-h-[420px]">
-            <Signature project={p} className="bg-bg/70" />
+          <div className="min-h-[440px]">
+            {hasWorld(p.slug) ? <World slug={p.slug} live /> : <Signature project={p} className="bg-bg/70" />}
           </div>
           <p className="label self-end text-muted lg:max-w-xs">
-            The signature diagram from the work index — an illustration of how {p.title} thinks, not a screenshot.
+            The same picture the film runs — an illustration of how {p.title} thinks, not a screenshot.
           </p>
         </Reveal>
       </CaseSection>
@@ -230,7 +232,7 @@ export function ProjectCaseStudy({ project: p }: { project: Project & { study: C
         >
           <span className="label flex justify-between text-muted">
             <span>
-              Next — <span className="tnum text-accent">{next.number}</span> / {pad(caseStudies.length)}
+              Next — <span className="tnum text-accent">{next.number}</span> / {pad(projectPages.length)}
             </span>
             <span>{next.category}</span>
           </span>

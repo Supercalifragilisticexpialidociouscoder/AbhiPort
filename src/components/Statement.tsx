@@ -39,8 +39,7 @@ export function Statement() {
           .fromTo(q("[data-strike]"), { scaleX: 0 }, { scaleX: 1, duration: 0.3, ease: "power2.inOut" })
           .to(q("[data-struck]"), { opacity: 0.22, duration: 0.2 }, "<0.15")
           .fromTo(q("[data-fix]"), { yPercent: 105, y: 0 }, { yPercent: 0, duration: 0.3, ease: "power3.out" }, "<0.05")
-          .fromTo(q("[data-note]"), { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.25 }, "<0.2")
-          .to({}, { duration: 0.2 });
+          .to({}, { duration: 0.35 });
       });
     },
     { scope: root },
@@ -85,11 +84,6 @@ export function Statement() {
           </span>
         </p>
 
-        <div className="mt-10 grid md:grid-cols-12">
-          <p data-note className="text-[clamp(18px,1.6vw,24px)] leading-snug md:col-span-5 md:col-start-8">
-            {statement.note}
-          </p>
-        </div>
       </div>
     </section>
   );

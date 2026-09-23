@@ -9,6 +9,7 @@ const STYLE: Record<ProjectStatus, string> = {
   Research: "border-fg/60 text-fg",
   Experiment: "border-dashed border-fg/50 text-muted",
   Hackathon: "border-accent text-accent",
+  Learning: "border-dotted border-fg/50 text-muted",
   Archived: "border-line text-muted line-through",
 };
 
